@@ -1,13 +1,18 @@
 package com.capston.date_app;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller; // RestController가 아니어야 합니다!
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class MainController {
+    @Value("${google.maps.api.key}")
+    private String apiKey;
 
     @GetMapping("/")
-    public String home() {
-        return "드디어 서버 연결 성공! 캡스톤 디자인 시작합니다. 🚀";
+    public String home(Model model) {
+        model.addAttribute("apiKey", apiKey);
+        return "index";
     }
 }

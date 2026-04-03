@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>우리 팀 지도 📍</title>
+    <style>
+        #map { height: 600px; width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>📍 우리 캡스톤 지도 테스트</h1>
+    <div id="map"></div>
+    <script th:inline="javascript">
+        function initMap() {
+            const seoul = { lat: 37.5665, lng: 126.9780 };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12, center: seoul,
+            });
+            new google.maps.Marker({ position: seoul, map: map });
+        }
+    </script>
+    <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${apiKey} + '&callback=initMap'" async defer></script>
+</body>
+</html>
