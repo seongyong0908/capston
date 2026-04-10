@@ -20,7 +20,8 @@
 
     <script th:inline="javascript">
         let map;
-        const dbPlaces = /*[[${places}]]*/ [];
+        // VS Code 오류 방지용 타임리프 주석 문법 적용 완료
+        const dbPlaces = /*[[${places}]]*/ []; 
 
         function initMap() {
             // 1. 초기 지도를 서울 중심으로 생성
@@ -30,7 +31,7 @@
             });
 
             // 2. DB에서 가져온 장소들에 빨간색 마커 찍기
-            if (dbPlaces) {
+            if (dbPlaces && dbPlaces.length > 0) {
                 dbPlaces.forEach(place => {
                     new google.maps.Marker({
                         position: { lat: place.latitude, lng: place.longitude },
@@ -57,7 +58,8 @@
             }
         }
     </script>
-    <!-- 컨트롤러에서 보내준 apiKey를 사용합니다 -->
+    
+    <!-- 컨트롤러에서 보내준 apiKey를 사용해서 구글 맵 호출 -->
     <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${apiKey} + '&callback=initMap'" async defer></script>
 </body>
 </html>
