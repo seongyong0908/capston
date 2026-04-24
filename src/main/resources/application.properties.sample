@@ -1,0 +1,17 @@
+# 1. MySQL 연결 설정
+# 'capstone' 부분은 성용님이 Workbench에서 만든 Schema(DB) 이름과 같아야 합니다.
+spring.datasource.url=jdbc:mysql://localhost:3306/capstone?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=root
+spring.datasource.password=8208
+
+# 2. JPA 설정 (MySQL 문법 사용)
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+# 서버 켤 때마다 테이블 구조를 MySQL에 자동으로 만들어줍니다.
+spring.jpa.hibernate.ddl-auto=update
+# 실행되는 SQL문을 콘솔에서 볼 수 있게 합니다.
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# 3. 구글 맵 API 키 (성용님 키 유지)
+google.maps.api.key=YOUR_GOOGLE_MAPS_API_KEY
