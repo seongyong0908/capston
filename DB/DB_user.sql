@@ -1,4 +1,4 @@
-//user 테이블 만들기
+`//user 테이블 만들기
 
 USE datecourse;
 
@@ -10,3 +10,4 @@ CREATE TABLE user (
     disliked_foods TEXT,
     preferred_style VARCHAR(100)
 );
+`
