@@ -16,7 +16,7 @@ public class MainController {
     @Value("${google.maps.api.key}")
     private String googleMapsApiKey;
 
-    @GetMapping("/")
+    @GetMapping("/map")
     public String index(Model model) {
         // 1. DB에서 맛집(Place) 리스트 가져와서 보내기
         model.addAttribute("places", placeRepository.findAll());
@@ -24,6 +24,6 @@ public class MainController {
         // 2. HTML에 구글 맵 API 키 전달하기
         model.addAttribute("apiKey", googleMapsApiKey);
         
-        return "index";
+        return "map";
     }
 }
