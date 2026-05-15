@@ -1,3 +1,5 @@
+-- 테이블 안에 데이터들을 넣는 파일
+
 -- 유저 데이터 (ID 1번으로 고정해서 삽입)
 INSERT IGNORE INTO user (id, email, password, nickname) 
 VALUES (1, 'test@test.com', '1234', '성용테스터');

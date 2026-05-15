@@ -1,3 +1,5 @@
+-- DB 테이블 만드는 파일
+
 -- 1. 유저 테이블 (없으면 생성)
 CREATE TABLE IF NOT EXISTS user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
