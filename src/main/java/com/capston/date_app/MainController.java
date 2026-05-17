@@ -61,5 +61,11 @@ public class MainController {
     @GetMapping("/mypage")
     public String myPage() {
         return "mypage"; // templates/mypage.html이 생길 예정
+
+        
     }
 }
+
+
+
+
