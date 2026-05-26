@@ -1,4 +1,4 @@
-// AI 요청 데이터 저장/조회 담당
+// AI 요청 데이터 DB에 저장/조회 담당
 
 package com.capston.date_app;
 
