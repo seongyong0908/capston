@@ -1,3 +1,5 @@
+// /map 경로로 지도 화면 연결
+
 package com.capston.date_app;
 
 import org.springframework.beans.factory.annotation.Autowired;

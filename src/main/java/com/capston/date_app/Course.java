@@ -1,3 +1,5 @@
+// course 테이블과 연결된 Entity
+
 package com.capston.date_app;
 
 import jakarta.persistence.*;

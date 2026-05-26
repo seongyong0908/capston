@@ -1,3 +1,5 @@
+// 회원가입/로그인 API 처리
+
 package com.capston.date_app;
 
 import org.springframework.beans.factory.annotation.Autowired;

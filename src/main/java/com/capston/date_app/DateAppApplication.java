@@ -1,3 +1,5 @@
+// 서버 시작점 (main 함수)
+
 package com.capston.date_app;
 
 import org.springframework.boot.SpringApplication;
