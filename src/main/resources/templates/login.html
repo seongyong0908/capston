@@ -6,41 +6,8 @@
   <title>로그인 - 데이트코스 추천</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          animation: {
-            blob: "blob 7s infinite",
-            float: "float 6s ease-in-out infinite",
-            'float-delayed': "float 6s ease-in-out 2s infinite",
-            'float-slow': "float 8s ease-in-out infinite",
-            'pulse-slow': "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          },
-          keyframes: {
-            blob: {
-              "0%": { transform: "translate(0px, 0px) scale(1)" },
-              "33%": { transform: "translate(30px, -50px) scale(1.1)" },
-              "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
-              "100%": { transform: "translate(0px, 0px) scale(1)" },
-            },
-            float: {
-              "0%, 100%": { transform: "translateY(0)" },
-              "50%": { transform: "translateY(-20px)" },
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .animation-delay-2000 { animation-delay: 2s; }
-      .animation-delay-4000 { animation-delay: 4s; }
-    }
-    /* 스크롤바 숨김 등 추가 스타일 */
-    body { margin: 0; min-height: 100vh; overflow-x: hidden; }
-  </style>
+  
+  <link rel="stylesheet" href="login.css">
 </head>
 <body>
 
@@ -152,30 +119,6 @@
     </div>
   </div>
 
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-      e.preventDefault(); // 기본 폼 제출(새로고침) 방지
-      
-      console.log("로그인 버튼 클릭됨");
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      // TODO: 이곳에서 fetch API 등을 사용해 Spring Boot 백엔드(UserController 등)로 로그인 요청을 보냅니다.
-      // 예시: 
-      // fetch('/api/login', { method: 'POST', body: JSON.stringify({ username, password }) })
-      // .then(response => { ... })
-
-      // --- 기존 React 코드에 있던 로직 구현 ---
-      // 취향 데이터가 있는지 확인 (예시로 localStorage를 사용)
-      const userTaste = localStorage.getItem('userTaste');
-
-      // 취향이 없으면 취향 설정 페이지로, 있으면 홈으로 이동
-      if (!userTaste) {
-        window.location.href = "/taste-setup.html"; // 생성 예정인 취향 설정 페이지 경로
-      } else {
-        window.location.href = "/home.html"; // 메인 홈 경로
-      }
-    });
-  </script>
+  <script src="login.js"></script>
 </body>
 </html>
