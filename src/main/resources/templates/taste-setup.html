@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>취향 설정 - 데이트코스 추천</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="taste-setup.css">
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50">
+
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+    <div class="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+  </div>
+
+  <header class="border-b bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex-1"></div>
+        <div class="text-center flex-1">
+          <h1 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+            내 취향 설정
+          </h1>
+          <p class="text-xs text-gray-500 mt-1">나만의 완벽한 데이트를 위한 취향을 설정해주세요</p>
+        </div>
+        <div class="flex-1 flex justify-end">
+          <button id="clearAllBtn" class="text-xs text-gray-500 hover:text-red-600 underline transition-colors">
+            전체 선택 취소
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 pb-8 space-y-6">
+    
+    <div class="rounded-xl border border-gray-100 shadow-xl bg-white/90 backdrop-blur-sm">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <svg class="w-6 h-6 text-pink-500 fill-pink-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          <h2 class="text-xl font-bold">선호하는 데이트 분위기</h2>
+          <span class="text-sm text-gray-500">(여러 개 선택 가능)</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="moodGrid">
+          <button data-type="mood" data-id="romantic" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">💕</div><div class="text-sm font-semibold">로맨틱</div>
+          </button>
+          <button data-type="mood" data-id="casual" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">😊</div><div class="text-sm font-semibold">캐주얼</div>
+          </button>
+          <button data-type="mood" data-id="luxury" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">✨</div><div class="text-sm font-semibold">럭셔리</div>
+          </button>
+          <button data-type="mood" data-id="active" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">🏃</div><div class="text-sm font-semibold">액티브</div>
+          </button>
+          <button data-type="mood" data-id="relaxed" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">☕</div><div class="text-sm font-semibold">여유로운</div>
+          </button>
+          <button data-type="mood" data-id="trendy" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-pink-300 transition-all">
+            <div class="text-2xl mb-1">🎨</div><div class="text-sm font-semibold">트렌디</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-gray-100 shadow-xl bg-white/90 backdrop-blur-sm">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <svg class="w-6 h-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <h2 class="text-xl font-bold">선호하지 않는 활동</h2>
+          <span class="text-sm text-gray-500">(여러 개 선택 가능)</span>
+        </div>
+        <div class="grid grid-cols-4 gap-3" id="activityGrid">
+          <button data-type="activity" data-id="cafe" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">☕</div><div class="text-sm font-semibold">카페</div>
+          </button>
+          <button data-type="activity" data-id="restaurant" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🍽️</div><div class="text-sm font-semibold">레스토랑</div>
+          </button>
+          <button data-type="activity" data-id="movie" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🎬</div><div class="text-sm font-semibold">영화</div>
+          </button>
+          <button data-type="activity" data-id="exhibition" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🖼️</div><div class="text-sm font-semibold">전시회</div>
+          </button>
+          <button data-type="activity" data-id="shopping" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🛍️</div><div class="text-sm font-semibold">쇼핑</div>
+          </button>
+          <button data-type="activity" data-id="park" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🌳</div><div class="text-sm font-semibold">공원</div>
+          </button>
+          <button data-type="activity" data-id="sports" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">⚽</div><div class="text-sm font-semibold">스포츠</div>
+          </button>
+          <button data-type="activity" data-id="culture" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-red-300 transition-all">
+            <div class="text-2xl mb-1">🎭</div><div class="text-sm font-semibold">문화생활</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-gray-100 shadow-xl bg-white/90 backdrop-blur-sm">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="text-2xl">🍽️</div>
+          <h2 class="text-xl font-bold">식이 제한사항</h2>
+          <span class="text-sm text-gray-500">(선택사항)</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3" id="dietGrid">
+          <button data-type="diet" data-id="vegetarian" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🥗</div><div class="text-sm font-semibold">채식</div>
+          </button>
+          <button data-type="diet" data-id="vegan" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🌱</div><div class="text-sm font-semibold">비건</div>
+          </button>
+          <button data-type="diet" data-id="halal" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🕌</div><div class="text-sm font-semibold">할랄</div>
+          </button>
+          <button data-type="diet" data-id="spicy" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🌶️</div><div class="text-sm font-semibold">맵지 않은 음식</div>
+          </button>
+          <button data-type="diet" data-id="noSeafood" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🦐</div><div class="text-sm font-semibold">해산물 제외</div>
+          </button>
+          <button data-type="diet" data-id="noPork" class="taste-btn p-3 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all">
+            <div class="text-2xl mb-1">🐷</div><div class="text-sm font-semibold">돼지고기 제외</div>
+          </button>
+        </div>
+
+        <div class="space-y-2 mt-4">
+          <label class="text-sm font-medium text-gray-700">기타 식이 제한사항</label>
+          <textarea id="customDiet" class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[6rem] border-2" placeholder="추가로 제한하거나 선호하지 않는 음식이 있다면 작성해주세요"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button id="cancelBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-200 bg-white hover:bg-gray-100 flex-1 h-12 border-2">
+        취소
+      </button>
+      <button id="completeBtn" disabled class="inline-flex items-center justify-center rounded-md text-sm font-medium flex-1 h-12 text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 transition-all">
+        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        완료
+      </button>
+    </div>
+  </main>
+
+  <script src="taste-setup.js"></script>
+</body>
+</html>

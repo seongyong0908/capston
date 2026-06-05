@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>캘린더 - 데이트코스 추천</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="calendar.css">
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50">
+
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-1/4 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+    <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+  </div>
+
+  <header class="border-b bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-pink-400 via-purple-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-pink-300/50 animate-pulse-slow">
+        <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">데이트 캘린더</h1>
+        <p class="text-xs text-gray-500">일정과 메모를 관리하세요</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10 pb-24">
+    <div class="grid lg:grid-cols-3 gap-8">
+      
+      <div class="lg:col-span-2">
+        <div class="rounded-xl border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
+          <div class="p-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 id="calendarTitle" class="text-2xl font-semibold tracking-tight"></h3>
+            <div class="flex items-center gap-2">
+              <button id="btnToday" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-200 bg-white hover:bg-gray-100 h-9 px-3">오늘</button>
+              <button id="btnPrevMonth" class="inline-flex items-center justify-center rounded-md hover:bg-gray-100 h-9 w-9">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button id="btnNextMonth" class="inline-flex items-center justify-center rounded-md hover:bg-gray-100 h-9 w-9">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="p-6 pt-4">
+            <div class="grid grid-cols-7 gap-2 mb-2">
+              <div class="text-center font-semibold py-2 text-sm text-red-500">일</div>
+              <div class="text-center font-semibold py-2 text-sm text-gray-700">월</div>
+              <div class="text-center font-semibold py-2 text-sm text-gray-700">화</div>
+              <div class="text-center font-semibold py-2 text-sm text-gray-700">수</div>
+              <div class="text-center font-semibold py-2 text-sm text-gray-700">목</div>
+              <div class="text-center font-semibold py-2 text-sm text-gray-700">금</div>
+              <div class="text-center font-semibold py-2 text-sm text-blue-500">토</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="rounded-xl border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
+          <div class="p-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h3 id="selectedDateTitle" class="text-xl font-semibold tracking-tight">날짜를 선택하세요</h3>
+              <p id="selectedDateCount" class="text-sm text-gray-500 pt-1"></p>
+            </div>
+            <button id="btnAddEvent" class="hidden inline-flex items-center justify-center rounded-md text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-9 px-3">
+              <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>추가
+            </button>
+          </div>
+          <div class="p-6 pt-4">
+            <div id="eventListContainer"></div>
+          </div>
+        </div>
+
+        <div id="quickAddCard" class="hidden rounded-xl border-0 shadow-xl bg-gradient-to-r from-purple-100 to-pink-100 p-6 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight text-purple-700 mb-3">저장된 코스 빠른 추가</h3>
+          <div class="space-y-2">
+            <button class="w-full text-left p-3 bg-white rounded-lg hover:bg-purple-50 transition-colors text-sm" onclick="alert('코스 일정이 추가되었습니다. (임시)')">
+              <div class="font-semibold text-purple-700">홍대 감성 데이트</div>
+              <div class="text-xs text-gray-600 mt-1">서울 마포구</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="eventModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="rounded-xl border bg-white text-gray-950 shadow-2xl w-full max-w-md">
+      <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b">
+        <div class="flex items-center justify-between">
+          <h3 id="modalTitle" class="font-semibold tracking-tight text-2xl">일정 추가</h3>
+          <button id="btnModalClose" class="p-2 hover:bg-gray-100 rounded-md">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <p id="modalDesc" class="text-sm text-gray-500"></p>
+      </div>
+      <div class="p-6 pt-4 space-y-4">
+        <input type="hidden" id="eventId"> <div class="space-y-2">
+          <label class="text-sm font-medium text-gray-700">제목</label>
+          <input type="text" id="eventTitle" placeholder="일정 제목" class="flex h-11 w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:border-purple-500">
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-gray-700">시간</label>
+          <input type="time" id="eventTime" class="flex h-11 w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:border-purple-500">
+        </div>
+        <div class="space-y-2" id="eventTypeGroup">
+          <label class="text-sm font-medium text-gray-700">유형</label>
+          <div class="flex gap-2">
+            <button type="button" data-val="course" class="type-btn flex-1 h-9 rounded-md border border-gray-200 text-sm font-medium">코스</button>
+            <button type="button" data-val="memo" class="type-btn flex-1 h-9 rounded-md border border-gray-200 text-sm font-medium bg-blue-500 text-white">메모</button>
+            <button type="button" data-val="reminder" class="type-btn flex-1 h-9 rounded-md border border-gray-200 text-sm font-medium">알림</button>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-gray-700">메모</label>
+          <textarea id="eventDesc" placeholder="상세 내용을 입력하세요" class="w-full h-24 px-3 py-2 border-2 border-gray-300 rounded-lg resize-none focus:outline-none focus:border-purple-500 text-sm"></textarea>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button id="btnModalCancel" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-200 bg-white hover:bg-gray-100 flex-1 h-11">취소</button>
+          <button id="btnModalSave" class="inline-flex items-center justify-center rounded-md text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 flex-1 h-11">
+            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>저장
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="calendar.js"></script>
+</body>
+</html>
