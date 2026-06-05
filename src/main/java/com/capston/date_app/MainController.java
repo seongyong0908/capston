@@ -34,6 +34,16 @@ public class MainController {
         
         return "map";
     }
+    // 비밀번호 찾기 길 뚫기
+    @GetMapping("/forgot-password.html")
+    public String forgotPasswordPage() {
+        return "forgot-password"; // src/main/resources/templates/forgot-password.html 을 보여줍니다!
+    }
+        // 회원가입 길 뚫기
+    @GetMapping("/signup.html") // 👈 뒤에 .html이 빠져있음!
+    public String signup() {
+    return "signup"; 
+    }
         // 로그인 길 뚫기
     @GetMapping("/login")
     public String loginPage() {

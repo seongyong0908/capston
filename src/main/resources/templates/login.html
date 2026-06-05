@@ -118,7 +118,13 @@
       </div>
     </div>
   </div>
-
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('status') === 'success') {
+        alert("회원가입이 완료되었습니다! 로그인을 진행해 주세요. 🎉");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    </script>
   <script src="login.js"></script>
 </body>
 </html>
