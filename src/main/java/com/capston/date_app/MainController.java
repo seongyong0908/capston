@@ -23,7 +23,7 @@ public class MainController {
     public String mainPage(Model model) {
         // 메인 화면 리스트에도 장소 정보를 보여주고 싶다면 아래 줄을 추가하세요.
         model.addAttribute("places", placeRepository.findAll());
-        return "index"; 
+        return "map"; 
     }
 
     // 2. /map 주소로 들어오면 지도 화면(map.html)을 보여줍니다.
