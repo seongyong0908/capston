@@ -1,3 +1,4 @@
+localStorage.removeItem('userTaste'); 
 document.getElementById('loginForm').addEventListener('submit', function(e) {
   e.preventDefault(); // 로그인 제출 시 화면이 새로고침되는 기본 동작 방지
   
