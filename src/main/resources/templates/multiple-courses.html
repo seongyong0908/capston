@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>추천 코스 선택 - 데이트코스 추천</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="multiple-courses.css">
+  <link rel="stylesheet" href="/multiple-courses.css">
 </head>
 <body class="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 relative min-h-screen">
 
@@ -41,13 +41,15 @@
     <div id="coursesContainer" class="grid md:grid-cols-3 gap-6"></div>
 
     <div id="actionContainer" class="hidden flex justify-center pt-8">
-      <button id="btnSelectCourse" class="w-full max-w-md h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-2xl text-white text-lg font-bold rounded-md flex items-center justify-center transition-all hover:scale-105">
-        <svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-        <span id="selectCourseText">선택하기</span>
-      </button>
+      <a href="/result.html" class="w-full max-w-md inline-block transition-all duration-500 hover:scale-105">
+        <button id="btnSelectCourse" type="button" class="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 shadow-2xl text-white text-lg font-bold rounded-md flex items-center justify-center cursor-pointer">
+          <svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          <span id="selectCourseText">선택하기</span>
+        </button>
+      </a>
     </div>
   </main>
 
-  <script src="multiple-courses.js"></script>
+  <script src="/multiple-courses.js"></script>
 </body>
 </html>

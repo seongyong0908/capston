@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>데이트 코스 추천 - 선호도 입력</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="new-preferences.css">
+  <link rel="stylesheet" href="/preferences.css">
 </head>
 <body class="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 relative min-h-screen">
 
@@ -126,12 +126,16 @@
       <textarea id="aiMessage" placeholder="예: 조용한 곳이 좋아요, 인스타 감성 카페 추천해주세요..." class="w-full h-32 px-4 py-3 border-2 rounded-lg resize-none focus:outline-none focus:border-purple-500"></textarea>
     </div>
 
-    <button id="btnSubmit" class="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-md shadow-2xl transition-all text-lg font-bold flex items-center justify-center gap-3">
-      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-      추천 시작
-    </button>
+    <a href="/multiple-courses.html" class="block w-full transition-all duration-500 hover:scale-[1.02]">
+      <button id="btnSubmit" type="button" class="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 text-white rounded-md shadow-2xl text-lg font-bold flex items-center justify-center gap-3 cursor-pointer">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+        </svg>
+        추천 시작
+      </button>
+    </a>
   </main>
 
-  <script src="new-preferences.js"></script>
+  <script src="/preferences.js"></script>
 </body>
 </html>
