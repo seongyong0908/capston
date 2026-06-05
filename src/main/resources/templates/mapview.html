@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지도 보기 - 데이트코스 추천</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="mapview.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 flex flex-col m-0 min-h-screen overflow-x-hidden">
+
+  <header class="border-b bg-white shadow-sm z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+          <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold">지도 보기</h1>
+          <p class="text-xs text-gray-500">서울 데이트 명소 찾기</p>
+        </div>
+      </div>
+
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="장소, 지역 검색..." class="flex w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:border-blue-500 pl-11 h-11">
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 relative overflow-hidden pb-20">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-yellow-50">
+      <svg class="w-full h-full opacity-20 absolute inset-0">
+        <defs>
+          <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#3b82f6" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#map-grid)" />
+      </svg>
+
+      <div class="absolute top-20 left-20 w-32 h-32 bg-blue-200 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob"></div>
+      <div class="absolute bottom-32 right-32 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-2000"></div>
+      <div class="absolute top-1/2 left-1/2 w-36 h-36 bg-yellow-200 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <div class="absolute inset-0 flex items-center justify-center p-8">
+      <div id="markersContainer" class="relative w-full max-w-4xl aspect-square">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+          <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border-4 border-blue-200">
+            <h2 class="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              서울
+            </h2>
+            <p class="text-sm text-gray-600 text-center">데이트 명소 지도</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl p-4 border-2 border-gray-200">
+      <div class="flex items-center gap-2 mb-2">
+        <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <h3 class="font-bold text-sm">지역 선택</h3>
+      </div>
+      <p class="text-xs text-gray-600">
+        원하는 지역을 클릭하면<br />
+        해당 지역 코스를 추천받아요
+      </p>
+    </div>
+
+    <div class="absolute top-4 right-4 space-y-2">
+      <button id="quickNavBtn" class="inline-flex items-center justify-center rounded-md w-10 h-10 bg-white hover:bg-blue-50 shadow-lg transition-colors">
+        <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </button>
+    </div>
+  </main>
+  
+  <script src="mapview.js"></script>
+</body>
+</html>
