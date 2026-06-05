@@ -1,3 +1,4 @@
+<!-- 취향 설정 페이지 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -148,5 +149,30 @@
   </main>
 
   <script src="taste-setup.js"></script>
+  <script src="/taste-setup.js"></script> <script>
+    // 1. HTML에 있는 완료 버튼(id="completeBtn")을 자바스크립트로 가져옵니다.
+    const completeBtn = document.getElementById('completeBtn');
+
+    // 2. 완료 버튼이 클릭되었을 때 실행할 로직을 연결합니다.
+    if (completeBtn) {
+        completeBtn.addEventListener('click', function() {
+            // 브라우저 로컬 스토리지에 "나 취향 설정했음!" 하고 완료 표시 박제!
+            localStorage.setItem('userTaste', 'completed');
+            
+            alert("🎯 취향 설정이 완료되었습니다! 추천 홈 화면으로 이동합니다.");
+            
+            // 드디어 최종 목적지인 홈 화면으로 이동
+            window.location.href = "/home.html";
+        });
+    }
+
+    // 3. 취소 버튼(id="cancelBtn")을 누르면 다시 로그인 페이지("/")로 튕겨 나가게 안전장치 추가
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            window.location.href = "/";
+        });
+    }
+  </script>
 </body>
 </html>
