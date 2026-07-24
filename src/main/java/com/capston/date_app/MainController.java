@@ -1,7 +1,7 @@
 package com.capston.date_app;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+// 안 쓰는 Value 임포트 지웠습니다 (노란줄 원인)
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,15 +10,25 @@ import java.util.List;
 @Controller
 public class MainController {
 
-    // 기존 구글맵 및 DB 연동 코드 그대로 유지
     @Autowired
     private PlaceRepository placeRepository;
 
-    @Value("${google.maps.api.key}")
-    private String googleMapsApiKey;
+    // ==========================================
+    // 👇 방금 수정한 핵심 지도 연동 부분 👇
+    // ==========================================
+    @GetMapping("/map")
+    public String showMap(Model model) {
+        // 1. DB에서 데이트 장소 리스트를 전부 가져옵니다.
+        List<Place> places = placeRepository.findAll();
+        
+        // 2. HTML(map.html)에서 쓸 수 있도록 'places'라는 이름으로 데이터를 넘겨줍니다.
+        model.addAttribute("places", places);
+        
+        return "map"; 
+    }
 
     // ==========================================
-    // 1. 인증 및 초기 진입 화면들
+    // 여기서부터는 기존 코드 그대로 유지
     // ==========================================
 
     // 앱 처음 켰을 때 나오는 로그인 화면
@@ -51,7 +61,6 @@ public class MainController {
         return "taste-setup"; // templates/taste-setup.html
     }
 
-
     // ==========================================
     // 2. 메인 홈 및 데이트 코스 추천 흐름 (★핵심 시나리오)
     // ==========================================
@@ -80,7 +89,6 @@ public class MainController {
         return "result"; // templates/result.html
     }
 
-
     // ==========================================
     // 3. 기타 주요 기능 페이지들 (지도, 캘린더, 마이페이지)
     // ==========================================
@@ -89,12 +97,6 @@ public class MainController {
     @GetMapping("/calendar.html")
     public String calendarPage() {
         return "calendar"; // templates/calendar.html
-    }
-
-    // 내 지도보기 / 데이트 코스 맵 페이지
-    @GetMapping("/map.html")
-    public String mapPage() {
-        return "map"; // templates/map.html
     }
 
     // 지도 상세 뷰 페이지

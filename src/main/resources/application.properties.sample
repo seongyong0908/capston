@@ -13,5 +13,3 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 
-# 3. 구글 맵 API 키 (성용님 키 유지)
-google.maps.api.key=YOUR_GOOGLE_MAPS_API_KEY
