@@ -8,6 +8,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
 
+  localStorage.setItem("loginId", username);
+
   /* TODO: 추후 Spring Boot 컨트롤러 API와 연동할 때 이 자리에 fetch 코드를 작성합니다.
      예시:
      fetch('/api/login', {
@@ -25,8 +27,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 
   // 취향 데이터 존재 여부에 따라 페이지 리다이렉션 처리
   if (!userTaste) {
-    window.location.href = "/taste-setup.html"; // 취향 세팅이 안 되어 있으면 설정 페이지로
+    window.location.href = "/taste-setup"; // 취향 세팅이 안 되어 있으면 설정 페이지로
   } else {
-    window.location.href = "/home.html";        // 설정되어 있으면 메인 홈 화면으로
+    window.location.href = "/home";        // 설정되어 있으면 메인 홈 화면으로
   }
 });

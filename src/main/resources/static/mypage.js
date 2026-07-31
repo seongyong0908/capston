@@ -120,10 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // -- 라우팅 & 단순 이동 이벤트 --
   document.getElementById('btnLogout').addEventListener('click', () => {
-    if(confirm("로그아웃 하시겠습니까?")) window.location.href = "/login.html";
+    if(confirm("로그아웃 하시겠습니까?")) window.location.href = "/";
   });
   document.getElementById('btnMyTaste').addEventListener('click', () => {
-    window.location.href = "/taste-setup.html";
+    window.location.href = "/taste-setup";
   });
 
 

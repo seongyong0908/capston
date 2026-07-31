@@ -43,12 +43,14 @@
 
       <div class="p-6 pt-0 space-y-5 px-8 pb-8">
         
-        <form id="signupForm" class="space-y-5">
+        <!-- 💡 백엔드 전송을 위한 action과 method 추가 -->
+        <form id="signupForm" action="/signup" method="POST" class="space-y-5">
           <div class="space-y-2">
             <label for="name" class="text-sm font-medium text-gray-700">이름</label>
             <div class="relative group">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input id="name" type="text" placeholder="홍길동" required 
+              <!-- 💡 name="name" 추가 -->
+              <input id="name" type="text" name="name" placeholder="홍길동" required 
                      class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 pl-11 h-11 border-2 focus:border-purple-500 focus:ring-purple-200 transition-all">
             </div>
           </div>
@@ -57,7 +59,8 @@
             <label for="username" class="text-sm font-medium text-gray-700">아이디</label>
             <div class="relative group">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input id="username" type="text" placeholder="아이디를 입력하세요" required 
+              <!-- 💡 백엔드와 맞춘 name="login_id" 추가 -->
+              <input id="username" type="text" name="login_id" placeholder="아이디를 입력하세요" required 
                      class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 pl-11 h-11 border-2 focus:border-purple-500 focus:ring-purple-200 transition-all">
             </div>
           </div>
@@ -68,7 +71,7 @@
             </label>
             <div class="relative group">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <input id="email" type="email" placeholder="example@email.com" 
+              <input id="email" type="email" name="email" placeholder="example@email.com" 
                      class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 pl-11 h-11 border-2 focus:border-purple-500 focus:ring-purple-200 transition-all">
             </div>
           </div>
@@ -77,7 +80,8 @@
             <label for="phone" class="text-sm font-medium text-gray-700">휴대폰 번호</label>
             <div class="relative group">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <input id="phone" type="tel" placeholder="010-1234-5678" required 
+              <!-- 💡 name="phone" 추가 -->
+              <input id="phone" type="tel" name="phone" placeholder="010-1234-5678" required 
                      class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 pl-11 h-11 border-2 focus:border-purple-500 focus:ring-purple-200 transition-all">
             </div>
           </div>
@@ -86,7 +90,8 @@
             <label for="password" class="text-sm font-medium text-gray-700">비밀번호</label>
             <div class="relative group">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input id="password" type="password" placeholder="8자 이상 입력해주세요" required minlength="8"
+              <!-- 💡 name="password" 추가 -->
+              <input id="password" type="password" name="password" placeholder="8자 이상 입력해주세요" required minlength="8"
                      class="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 pl-11 h-11 border-2 focus:border-purple-500 focus:ring-purple-200 transition-all">
             </div>
           </div>
@@ -115,11 +120,10 @@
             </label>
           </div>
 
-          <a href="/?status=success" class="w-full block">
-            <button type="button" class="inline-flex items-center justify-center rounded-md text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 w-full h-12 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:from-pink-600 hover:via-purple-600 hover:to-purple-700 shadow-lg shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/50 transition-all duration-300 text-white text-base font-semibold">
-              가입하기
-            </button>
-          </a>
+          <!-- 💡 a 태그 대신 type="submit" 버튼으로 변경하여 서버 전송 가능하게 수정 -->
+          <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 w-full h-12 bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 hover:from-pink-600 hover:via-purple-600 hover:to-purple-700 shadow-lg shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/50 transition-all duration-300 text-white text-base font-semibold">
+            가입하기
+          </button>
         </form>
 
         <div class="relative py-4">
@@ -128,7 +132,7 @@
           </div>
           <div class="relative flex justify-center text-sm">
             <span class="bg-white px-4 text-gray-500 font-medium">
-              또는 간편 가입
+               또는 간편 가입
             </span>
           </div>
         </div>
@@ -154,7 +158,7 @@
 
         <div class="text-center text-sm text-gray-600 pt-4">
           이미 계정이 있으신가요? 
-          <a href="/login.html" class="text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors">
+          <a href="/" class="text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors">
             로그인
           </a>
         </div>

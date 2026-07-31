@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('') + `
       <div class="pt-4 flex gap-3">
         <button onclick="document.getElementById('roomSelectorModal').classList.add('hidden')" class="flex-1 h-11 border-2 border-gray-200 rounded-md hover:bg-gray-50">닫기</button>
-        <button onclick="window.location.href='/mypage.html'" class="flex-1 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-md">방 관리</button>
+        <button onclick="window.location.href='/mypage'" class="flex-1 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-md">방 관리</button>
       </div>
     `;
   };
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnRoomClose').addEventListener('click', () => modal.classList.add('hidden'));
 
   // 추천받기 버튼
-  btnStart.addEventListener('click', () => window.location.href = '/preferences.html');
+  btnStart.addEventListener('click', () => window.location.href = '/preferences');
 
   // 초기화
   applyTheme();

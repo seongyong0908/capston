@@ -87,12 +87,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 버튼 이벤트
   document.getElementById('btnBack').addEventListener('click', () => {
-    window.location.href = '/preferences.html';
+    window.location.href = '/preferences';
   });
 
   document.getElementById('btnSelectCourse').addEventListener('click', () => {
     // 최종 결과 화면으로 이동
-    window.location.href = '/results.html';
+    window.location.href = '/results';
   });
 
   // 초기 렌더링

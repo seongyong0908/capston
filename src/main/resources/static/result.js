@@ -199,9 +199,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   // -- 헤더 & 바텀 네비게이션 액션 --
-  document.getElementById('btnNavCalendar').addEventListener('click', () => window.location.href = '/calendar.html');
-  document.getElementById('btnNavMyPage').addEventListener('click', () => window.location.href = '/mypage.html');
-  document.getElementById('btnRetry').addEventListener('click', () => window.location.href = '/preferences.html');
+  document.getElementById('btnNavCalendar').addEventListener('click', () => window.location.href = '/calendar');
+  document.getElementById('btnNavMyPage').addEventListener('click', () => window.location.href = '/mypage');
+  document.getElementById('btnRetry').addEventListener('click', () => window.location.href = '/preferences');
   document.getElementById('btnStart').addEventListener('click', () => {
     alert("카카오맵 경로 탐색을 시작합니다!");
     window.open(`https://map.kakao.com/link/search/${encodeURIComponent(currentCourse[0].address)}`);

@@ -90,9 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 네비게이션
-  document.getElementById('btnBack').addEventListener('click', () => window.location.href = '/home.html');
+  document.getElementById('btnBack').addEventListener('click', () => window.location.href = '/home');
   document.getElementById('btnSubmit').addEventListener('click', () => {
-    window.location.href = '/multiple-courses.html';
+    window.location.href = '/multiple-courses';
   });
 
   // 초기 렌더링

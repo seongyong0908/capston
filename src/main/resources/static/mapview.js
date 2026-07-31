@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 클릭 이벤트 추가: 선택한 지역의 파라미터를 담아 이동 (추후 생성할 preferences.html로 연결 예정)
     btn.addEventListener('click', () => {
       // URL 인코딩을 통해 한글 깨짐 방지
-      window.location.href = `/preferences.html?location=${encodeURIComponent(area.name)}`;
+      window.location.href = `/preferences?location=${encodeURIComponent(area.name)}`;
     });
 
     // 컨테이너에 마커 추가
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 3. 우측 상단 빠른 네비게이션 버튼 이벤트
   document.getElementById('quickNavBtn').addEventListener('click', () => {
-    window.location.href = "/preferences.html";
+    window.location.href = "/preferences";
   });
 
   // 4. 검색창 이벤트 (UI 동작만 구현)
