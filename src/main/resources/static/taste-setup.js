@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 💡 핵심: 백엔드로 전송하는 완료 버튼 클릭 이벤트
   completeBtn.addEventListener('click', async () => {
     // 버튼이 정상적으로 눌렸는지 확인하는 경고창 (이게 떠야 합니다!)
-    alert("완료 버튼 클릭됨! 백엔드로 전송을 시작합니다."); 
+    alert("취향 설정 완료"); 
 
     // ✅ 수정 후 (로그인한 사람의 아이디를 브라우저 메모장에서 몰래 가져옴!)
     const login_id = localStorage.getItem("loginId");
@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (response.ok) {
         alert("취향 설정이 완료되었습니다!");
+        localStorage.setItem('userTaste', 'done');
         window.location.href = "/home"; // 성공 시 이동
       } else {
         alert("서버 오류로 취향 저장에 실패했습니다.");

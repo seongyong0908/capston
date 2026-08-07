@@ -10,15 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let userTaste = localStorage.getItem('userTaste'); // 취향 설정 화면에서 저장한 값 연동
 
-  let roomsData = [
-    { id: 'r1', name: '우리 둘만', type: 'couple', isActive: true, members: [{id:'m1', name:'여친님', relationship:''}] },
-    { id: 'r2', name: '가족 모임', type: 'family', isActive: false, members: [] }
-  ];
+  let roomsData = [];
 
-  let savedCoursesData = [
-    { id: 'c1', title: '홍대 감성 데이트', location: '서울 마포구', date: '2026.06.01', places: ['카페', '전시회', '레스토랑'] },
-    { id: 'c2', title: '강남 럭셔리 코스', location: '서울 강남구', date: '2026.05.28', places: ['브런치', '쇼핑', '파인다이닝'] }
-  ];
+  let savedCoursesData = [];
 
   // 방 만들기용 임시 멤버 상태
   let tempMembers = [];
@@ -36,45 +30,72 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tasteStatusText').textContent = userTaste ? "취향을 확인하고 수정하세요" : "취향을 설정하고 더 나은 추천을 받아보세요";
   };
 
-  const renderRooms = () => {
+ // 💡 서버 연동 + 방 삭제 + 멤버 표시 기능이 모두 합쳐진 최종 renderRooms 함수
+const renderRooms = async () => {
     const container = document.getElementById('roomsContainer');
-    if (roomsData.length === 0) {
-      container.innerHTML = `
-        <div class="text-center py-12 text-gray-500">
-          <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          <p class="mb-2">아직 생성된 방이 없어요</p>
-          <p class="text-sm text-gray-400">누구와 함께 할지 방을 만들어보세요!</p>
-        </div>`;
-      return;
-    }
+    if (!container) return;
 
-    let html = '';
-    roomsData.forEach(room => {
-      const typeEmoji = room.type === 'couple' ? '💕 연인' : room.type === 'friend' ? '⭐ 친구' : '👨‍👩‍👧‍👦 가족';
-      const activeClass = room.isActive ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-blue-300';
-      const activeBadge = room.isActive ? `<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>활성화</span>` : '';
-      
-      let membersHtml = room.members.map(m => `<span class="text-xs bg-white border border-gray-200 px-2 py-1 rounded-full">${m.name}${m.relationship ? ` (${m.relationship})` : ''}</span>`).join('');
+    const loginId = localStorage.getItem("loginId");
+    if (!loginId) return;
 
-      html += `
-        <div class="border-2 rounded-xl p-4 transition-all cursor-pointer ${activeClass}" onclick="setActiveRoom('${room.id}')">
-          <div class="flex items-start justify-between mb-2">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <h3 class="text-lg font-bold">${room.name}</h3>
-                ${activeBadge}
-                <span class="text-xs bg-gray-100 px-2 py-1 rounded-full">${typeEmoji}</span>
+    try {
+        // 1. 서버에서 진짜 방 목록 가져오기
+        const response = await fetch(`/api/rooms?login_id=${loginId}`);
+        if (!response.ok) return;
+
+        const roomsData = await response.json();
+
+        // 2. 방이 없을 때 화면 처리
+        if (roomsData.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <p class="mb-2">아직 생성된 방이 없어요</p>
+                    <p class="text-sm text-gray-400">누구와 함께 할지 방을 만들어보세요!</p>
+                </div>`;
+            return;
+        }
+
+        // 3. 방 목록을 화면에 예쁘게 그리기
+        let html = '';
+        roomsData.forEach((room, index) => {
+            const typeEmoji = room.roomType === 'couple' ? '💕 연인' : room.roomType === 'friend' ? '⭐ 친구' : '👨‍👩‍👧‍👦 가족';
+            const activeClass = index === 0 ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-blue-300';
+            const activeBadge = index === 0 ? `<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full flex items-center gap-1">활성화</span>` : '';
+            
+            // 초대 코드 UI (클릭하면 복사됨!)
+            const inviteCodeHtml = room.inviteCode ? `
+              <div class="mt-2 flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-100 inline-flex">
+                <span class="text-xs text-gray-500 font-medium">초대 코드:</span>
+                <span class="text-sm font-mono font-bold text-blue-600 tracking-wider">${room.inviteCode}</span>
+                <button onclick="event.stopPropagation(); navigator.clipboard.writeText('${room.inviteCode}').then(() => alert('초대 코드가 복사되었습니다! 📋'))" class="ml-1 text-xs bg-white border border-gray-200 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded shadow-sm transition-colors">
+                  복사
+                </button>
               </div>
-              <div class="flex flex-wrap gap-1 mt-2">${membersHtml}</div>
-            </div>
-            <button class="hover:bg-red-100 hover:text-red-600 p-2 rounded-md transition-colors" onclick="event.stopPropagation(); deleteRoom('${room.id}')">
-              <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-            </button>
-          </div>
-        </div>`;
-    });
-    container.innerHTML = html;
-  };
+            ` : '';
+
+            html += `
+              <div class="border-2 rounded-xl p-4 transition-all cursor-pointer ${activeClass}">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <h3 class="text-lg font-bold">${room.roomName}</h3>
+                      ${activeBadge}
+                      <span class="text-xs bg-gray-100 px-2 py-1 rounded-full">${typeEmoji}</span>
+                    </div>
+                    ${inviteCodeHtml}
+                  </div>
+                </div>
+              </div>`;
+        });
+        
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error("방 목록 불러오기 실패:", error);
+    }
+};
+  
 
   const renderSavedCourses = () => {
     const container = document.getElementById('coursesContainer');
@@ -216,24 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // -- 4. 방 만들기 모달 --
   const modalRoom = document.getElementById('modalRoom');
   
-  const renderTempMembers = () => {
-    const container = document.getElementById('addedMembersContainer');
-    container.innerHTML = tempMembers.map(m => `
-      <span class="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center gap-2">
-        ${m.name}${m.relationship ? ` (${m.relationship})` : ''}
-        <button onclick="removeTempMember('${m.id}')" class="hover:text-red-600"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-      </span>
-    `).join('');
-  };
 
-  window.removeTempMember = (id) => {
-    tempMembers = tempMembers.filter(m => m.id !== id);
-    renderTempMembers();
-  };
 
   document.getElementById('btnOpenRoomModal').addEventListener('click', () => {
     document.getElementById('roomName').value = '';
-    tempMembers = [];
     tempRoomType = 'couple';
     // 방 타입 버튼 스타일 리셋
     document.querySelectorAll('.room-type-btn').forEach(btn => {
@@ -241,21 +248,10 @@ document.addEventListener('DOMContentLoaded', function() {
         ? "room-type-btn p-3 rounded-xl border-2 transition-all bg-pink-50 border-pink-500 shadow-md"
         : "room-type-btn p-3 rounded-xl border-2 border-gray-200 transition-all";
     });
-    renderTempMembers();
     modalRoom.classList.remove('hidden');
   });
 
-  // 멤버 추가 버튼
-  document.getElementById('btnAddMember').addEventListener('click', () => {
-    const nameInput = document.getElementById('memberName');
-    const relInput = document.getElementById('memberRel');
-    if(nameInput.value.trim()){
-      tempMembers.push({ id: `m${Date.now()}`, name: nameInput.value, relationship: relInput.value });
-      nameInput.value = '';
-      relInput.value = '';
-      renderTempMembers();
-    }
-  });
+ 
 
   // 방 타입 변경 버튼
   document.querySelectorAll('.room-type-btn').forEach(btn => {
@@ -276,20 +272,47 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeRoomModal = () => modalRoom.classList.add('hidden');
   document.getElementById('btnRoomClose').addEventListener('click', closeRoomModal);
   document.getElementById('btnRoomCancel').addEventListener('click', closeRoomModal);
-  document.getElementById('btnRoomSave').addEventListener('click', () => {
+  document.getElementById('btnRoomSave').addEventListener('click', async () => {
     const roomName = document.getElementById('roomName').value;
     if(!roomName.trim()) return alert("방 이름을 입력해주세요.");
     
-    roomsData.push({
-      id: `r${Date.now()}`,
-      name: roomName,
-      type: tempRoomType,
-      isActive: roomsData.length === 0, // 첫 방이면 활성화
-      members: [...tempMembers]
-    });
-    
-    renderRooms();
-    closeRoomModal();
+   
+    // 1. 로컬스토리지에서 로그인한 유저 아이디 가져오기
+    const loginId = localStorage.getItem("loginId");
+    if (!loginId) {
+        alert("로그인 정보가 없습니다.");
+        return;
+    }
+
+    // 2. 서버로 보낼 데이터 묶기
+    const requestData = {
+        login_id: loginId,
+        room_name: roomName, // 사용자가 입력한 방 이름
+        room_type: tempRoomType // 사용자가 선택한 연인/친구/가족 타입
+    };
+
+    try {
+        // 3. 백엔드(스프링 부트)로 방 생성 요청 쏘기!
+        const response = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+
+        if (response.ok) {
+            alert("방이 성공적으로 생성되었습니다! 초대 코드가 발급되었습니다. 🎉");
+            closeRoomModal(); // 팝업 닫기
+            
+            // 임시: 서버에 저장된 내역을 다시 불러오기 위해 새로고침
+            window.location.reload(); 
+        } else {
+            alert("방 생성에 실패했습니다.");
+        }
+    } catch (error) {
+        console.error("통신 에러:", error);
+        alert("서버 오류가 발생했습니다.");
+    }
+    // ⬆️ 여기까지 붙여넣기! ⬆️
   });
 
   // 초기 렌더링 실행

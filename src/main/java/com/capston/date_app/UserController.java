@@ -1,5 +1,6 @@
 package com.capston.date_app;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -53,5 +54,24 @@ public class UserController {
         userRepository.save(user);
 
         return "success";
+    }
+    // 💡 로그인 검증 API
+    @PostMapping("/api/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> data) {
+        String loginId = data.get("login_id");
+        String password = data.get("password");
+
+        System.out.println("🔥 로그인 시도 아이디: " + loginId);
+
+        // 1. DB에서 loginId로 유저 찾기
+        User user = userRepository.findByLoginId(loginId).orElse(null);
+
+        // 2. 유저가 없거나 비밀번호가 틀리면 거절 (401 에러)
+        if (user == null || !user.getPassword().equals(password)) {
+            return ResponseEntity.status(401).body("아이디 또는 비밀번호가 틀렸습니다.");
+        }
+
+        // 3. 로그인 성공 시
+        return ResponseEntity.ok("success");
     }
 }

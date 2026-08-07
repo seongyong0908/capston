@@ -8,10 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   // 더미 데이터: 사용자 방 목록 (localStorage 등에서 불러왔다고 가정)
-  const allRooms = [
-    { id: 'r1', name: '우리 둘만', type: 'couple', members: [{name: '여친님'}] },
-    { id: 'r2', name: '가족 모임', type: 'family', members: [] }
-  ];
+  let allRooms = [];
   let activeRoom = null; // 초기에는 선택 안 된 상태
 
   // DOM 요소
@@ -138,3 +135,41 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   renderPopularCourses();
 });
+// 💡 새로운 방을 생성해서 서버로 보내는 함수
+async function createNewRoom(roomName, roomType) {
+    // 1. 로컬스토리지에서 현재 로그인한 내 아이디 꺼내기
+    const loginId = localStorage.getItem("loginId");
+    
+    if (!loginId) {
+        alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+        window.location.href = "/";
+        return;
+    }
+ 
+    // 2. 서버로 보낼 데이터 포장
+    const roomData = {
+        login_id: loginId,
+        room_name: roomName,
+        room_type: roomType
+    };
+
+    try {
+        // 3. 백엔드 주방장에게 방 만들어달라고 요청 (fetch)
+        const response = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(roomData)
+        });
+
+        if (response.ok) {
+            alert("새로운 방이 성공적으로 만들어졌습니다! 🎉");
+            // 방이 만들어졌으니 화면을 새로고침해서 최신 상태로 만듦
+            window.location.reload(); 
+        } else {
+            alert("방 생성에 실패했습니다.");
+        }
+    } catch (error) {
+        console.error("통신 에러:", error);
+        alert("서버와 통신하는 중 문제가 발생했습니다.");
+    }
+}
