@@ -1,8 +1,11 @@
 package com.capston.date_app;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController; // @Controller 대신 사용
 import lombok.RequiredArgsConstructor;
@@ -73,5 +76,35 @@ public class UserController {
 
         // 3. 로그인 성공 시
         return ResponseEntity.ok("success");
+    }
+    // 💡 마이페이지용 내 정보 조회 API
+    @GetMapping("/api/user")
+    public User getUserInfo(@RequestParam("login_id") String loginId) {
+        System.out.println("🔥 마이페이지 정보 요청 들어온 아이디: " + loginId);
+        
+        // 취향 설정 API에서 쓰던 방식 그대로 유저를 찾아옵니다!
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        
+        return user; // 유저 객체를 통째로 JSON으로 응답합니다!
+    }
+    // 💡 마이페이지 프로필 수정(저장) API
+    @PutMapping("/api/user")
+    public String updateUserInfo(@RequestParam("login_id") String loginId, @RequestBody java.util.Map<String, String> data) {
+        System.out.println("🔥 프로필 수정 요청 들어온 아이디: " + loginId);
+        
+        // 1. DB에서 유저를 찾습니다.
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        
+        // 2. 수정된 데이터로 갱신합니다.
+        user.setName(data.get("name"));
+        user.setEmail(data.get("email"));
+        user.setPhone(data.get("phone"));
+        
+        // 3. DB에 다시 저장합니다.
+        userRepository.save(user);
+        
+        return "success";
     }
 }

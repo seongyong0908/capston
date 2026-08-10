@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+
   // 더미 데이터: 인기 코스
   const popularCourses = [
     { id: "popular-1", userName: "김민지", userAvatar: "🙋‍♀️", title: "홍대 감성 데이트 코스", location: "홍대/신촌", type: "couple", places: ["망원한강공원", "연남동 카페거리", "홍대 맛집"], likes: 234, views: 1240, tags: ["로맨틱", "감성", "카페"] },
@@ -25,6 +26,71 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeRoomEmoji = document.getElementById('activeRoomEmoji');
   const noRoomNotice = document.getElementById('noRoomNotice');
   const modal = document.getElementById('roomSelectorModal');
+
+
+  const renderRooms = async () => {
+    const container = document.getElementById('roomListContainer');
+    if (!container) return;
+
+    const loginId = localStorage.getItem("loginId");
+    if (!loginId) return;
+
+    try {
+        const response = await fetch(`/api/rooms?login_id=${loginId}`);
+        if (!response.ok) return;
+
+        allRooms = await response.json();
+
+        // 방이 하나도 없을 때의 화면 + 닫기/방관리 버튼
+        if (allRooms.length === 0) {
+            container.innerHTML = `
+                <p class="text-sm text-gray-400 text-center py-4">참여 중인 방이 없습니다.</p>
+                <div class="pt-4 flex gap-3 mt-2">
+                    <button onclick="document.getElementById('roomSelectorModal').classList.add('hidden')" class="flex-1 h-11 border-2 border-gray-200 rounded-md hover:bg-gray-50 transition-colors">닫기</button>
+                    <button onclick="window.location.href='/mypage'" class="flex-1 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-md transition-transform hover:scale-105">방 관리</button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        
+        // 1. 방 목록 예쁘게 그리기
+        allRooms.forEach((room) => {
+            const currentName = room.name || room.roomName || room.room_name || "이름 없음";
+            const currentType = room.type || room.roomType || room.room_type || "family";
+            const currentId = room.id || room.roomId || room.room_id;
+
+            const isAct = activeRoom && activeRoom.id === currentId;
+            const typeEmoji = currentType === 'couple' ? '💕 연인' : currentType === 'friend' ? '⭐ 친구' : '👨‍👩‍👧‍👦 가족';
+            
+            html += `
+              <button onclick="selectRoom('${currentId}')" class="w-full p-4 border-2 rounded-xl transition-all text-left mb-2 ${isAct ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}">
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="text-lg font-bold">${currentName}</h3>
+                  ${isAct ? `<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full shadow-sm">✓ 활성화</span>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-gray-100 px-2 py-1 rounded-full">${typeEmoji}</span>
+                </div>
+              </button>
+            `;
+        });
+
+        // 2. 잃어버린 닫기 / 방 관리 버튼 추가하기!
+        html += `
+          <div class="pt-4 flex gap-3 mt-2 border-t border-gray-100">
+            <button onclick="document.getElementById('roomSelectorModal').classList.add('hidden')" class="flex-1 h-11 border-2 border-gray-200 rounded-md hover:bg-gray-50 transition-colors">닫기</button>
+            <button onclick="window.location.href='/mypage'" class="flex-1 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-md transition-transform hover:scale-[1.02] shadow-md">방 관리</button>
+          </div>
+        `;
+        
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error("방 목록 불러오기 실패:", error);
+    }
+};
 
   // 방 타입에 따른 테마 설정
   const applyTheme = () => {
@@ -125,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 모달 토글
-  document.getElementById('btnOpenRoomSelector').addEventListener('click', () => { renderRoomModal(); modal.classList.remove('hidden'); });
+  document.getElementById('btnOpenRoomSelector').addEventListener('click', () => { modal.classList.remove('hidden'); });
   document.getElementById('btnRoomClose').addEventListener('click', () => modal.classList.add('hidden'));
 
   // 추천받기 버튼
@@ -134,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 초기화
   applyTheme();
   renderPopularCourses();
+  renderRooms();
 });
 // 💡 새로운 방을 생성해서 서버로 보내는 함수
 async function createNewRoom(roomName, roomType) {

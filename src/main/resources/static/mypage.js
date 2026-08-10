@@ -1,16 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
-  
-  // -- 상태(State) 데이터 (임시 데이터 초기화) --
-  let userProfile = {
-    name: "김데이트",
-    email: "date@example.com",
-    phone: "010-1234-5678",
-    joinDate: "2026.03.15"
-  };
 
   let userTaste = localStorage.getItem('userTaste'); // 취향 설정 화면에서 저장한 값 연동
-
-  let roomsData = [];
 
   let savedCoursesData = [];
 
@@ -24,9 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // -- 기본 UI 렌더링 함수 --
   const renderProfile = () => {
-    document.getElementById('profileAvatar').textContent = userProfile.name.charAt(0);
-    document.getElementById('profileName').textContent = userProfile.name;
-    document.getElementById('profileEmail').textContent = userProfile.email;
     document.getElementById('tasteStatusText').textContent = userTaste ? "취향을 확인하고 수정하세요" : "취향을 설정하고 더 나은 추천을 받아보세요";
   };
 
@@ -151,18 +138,38 @@ const renderRooms = async () => {
   // -- 1. 프로필 수정 모달 --
   const modalProfile = document.getElementById('modalProfile');
   document.getElementById('btnEditProfile').addEventListener('click', () => {
-    document.getElementById('editName').value = userProfile.name;
-    document.getElementById('editEmail').value = userProfile.email;
-    document.getElementById('editPhone').value = userProfile.phone;
+    // document.getElementById('editName').value = userProfile.name;
+    // document.getElementById('editEmail').value = userProfile.email;
+    // document.getElementById('editPhone').value = userProfile.phone;
     modalProfile.classList.remove('hidden');
   });
-  document.getElementById('btnProfileCancel').addEventListener('click', () => modalProfile.classList.add('hidden'));
-  document.getElementById('btnProfileSave').addEventListener('click', () => {
-    userProfile.name = document.getElementById('editName').value;
-    userProfile.email = document.getElementById('editEmail').value;
-    userProfile.phone = document.getElementById('editPhone').value;
-    renderProfile();
+  document.getElementById('btnProfileCancel').addEventListener('click', () =>{
     modalProfile.classList.add('hidden');
+  });
+ document.getElementById('btnProfileSave').addEventListener('click', async () => {
+    const loginId = localStorage.getItem("loginId");
+    const newName = document.getElementById('editNameInput').value; // HTML input의 id에 맞춰 수정 가능
+    const newEmail = document.getElementById('editEmailInput').value;
+    const newPhone = document.getElementById('editPhoneInput').value;
+
+    try {
+        // 서버에 수정 요청 보내기 (백엔드 API 주소에 맞게 확인 필요)
+        const response = await fetch(`/api/user?login_id=${loginId}`, {
+            method: 'PUT', // 또는 PATCH
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone })
+        });
+
+        if (response.ok) {
+            alert("프로필이 성공적으로 수정되었습니다! ✨");
+            modalProfile.classList.add('hidden');
+            loadUserInfo(); // 화면 새로고침 없이 바로 최신 정보로 다시 불러오기
+        } else {
+            alert("프로필 수정에 실패했습니다.");
+        }
+    } catch (error) {
+        console.error("프로필 수정 통신 에러:", error);
+    }
   });
 
   // -- 2. 코스 상세 모달 --
@@ -319,4 +326,101 @@ const renderRooms = async () => {
   renderProfile();
   renderRooms();
   renderSavedCourses();
+  loadUserInfo();
+  renderMyRooms();
+
+// 💡 1. 내 정보 불러오기 (바깥 화면 + 모달창 입력칸 싹 다 채움!)
+async function loadUserInfo() {
+    const loginId = localStorage.getItem("loginId");
+    if (!loginId) return;
+    
+    try {
+        const response = await fetch(`/api/user?login_id=${loginId}`);
+        if (!response.ok) return;
+        const user = await response.json();
+        
+        // [바깥 화면 채우기]
+        if (document.getElementById('profileName')) document.getElementById('profileName').textContent = user.name || "이름 없음";
+        if (document.getElementById('profileEmail')) document.getElementById('profileEmail').textContent = user.email || "이메일 없음";
+        if (document.getElementById('profileAvatar') && user.name) document.getElementById('profileAvatar').textContent = user.name.charAt(0);
+        
+        // [수정 모달창 입력칸 채우기]
+        if (document.getElementById('editNameInput')) document.getElementById('editNameInput').value = user.name || "";
+        if (document.getElementById('editEmailInput')) document.getElementById('editEmailInput').value = user.email || "";
+        if (document.getElementById('editPhoneInput')) document.getElementById('editPhoneInput').value = user.phone || "";
+        
+    } catch (error) { console.error("프로필 정보 로드 실패:", error); }
+}
+
+// 💡 2. 방 목록 불러오기
+async function renderMyRooms() {
+    const container = document.getElementById('myRoomsContainer');
+    if (!container) return;
+    const loginId = localStorage.getItem("loginId");
+    if (!loginId) return;
+
+    try {
+        const response = await fetch(`/api/rooms?login_id=${loginId}`);
+        if (!response.ok) return;
+        const myRooms = await response.json();
+
+        if (myRooms.length === 0) {
+            container.innerHTML = `<p class="text-center text-gray-500 py-8">참여 중인 방이 없습니다.</p>`;
+            return;
+        }
+
+        let html = '';
+        myRooms.forEach((room) => {
+            const isRoomAdmin = room.adminId === loginId; 
+            html += `
+              <div class="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl mb-3 bg-white shadow-sm">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-800">${room.name || room.roomName || room.room_name}</h3>
+                  <p class="text-xs text-gray-500 mt-1">초대 코드: <span class="font-mono bg-gray-100 px-1">${room.inviteCode || "발급안됨"}</span></p>
+                </div>
+                ${isRoomAdmin 
+                    ? `<button onclick="deleteRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100">🗑️ 방 삭제</button>` 
+                    : `<button onclick="leaveRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-gray-50 text-gray-600 font-semibold rounded-lg hover:bg-gray-100">🏃‍♂️ 탈퇴하기</button>`
+                }
+              </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (error) { console.error("방 목록 로드 실패:", error); }
+}
+
+// 💡 3. 방 삭제 기능 (방장용)
+async function deleteRoom(roomId) {
+    if (!confirm("정말 이 방을 삭제하시겠습니까? 🗑️")) return;
+    try {
+        const response = await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+        if (response.ok) { alert("방이 성공적으로 삭제되었습니다."); window.location.reload(); }
+    } catch (error) { console.error(error); }
+}
+
+// 💡 4. 방 탈퇴 기능 (멤버용)
+async function leaveRoom(roomId) {
+    const loginId = localStorage.getItem("loginId");
+    if (!confirm("이 방에서 정말 탈퇴하시겠습니까? 🏃‍♂️")) return;
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/leave?login_id=${loginId}`, { method: 'POST' });
+        if (response.ok) { alert("방에서 탈퇴했습니다."); window.location.reload(); }
+    } catch (error) { console.error(error); }
+}
+
+// 💡 5. 초대 코드로 가입 기능
+async function joinRoomWithCode() {
+    const inviteCode = prompt("방장이 알려준 초대 코드를 입력해 주세요: 🎟️");
+    if (!inviteCode || inviteCode.trim() === "") return; 
+    const loginId = localStorage.getItem("loginId");
+    try {
+        const response = await fetch('/api/rooms/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_id: loginId, invite_code: inviteCode.trim() })
+        });
+        if (response.ok) { alert("방에 성공적으로 참여했습니다! 🎉"); window.location.reload(); }
+        else { alert("초대 코드가 틀렸거나 참여할 수 없는 방입니다."); }
+    } catch (error) { console.error(error); }
+}
 });
