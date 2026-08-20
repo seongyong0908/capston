@@ -102,16 +102,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (activeRoom) {
-      if (activeRoom.type === 'couple') {
-        const pName = activeRoom.members[0]?.name || "당신";
-        config = { ...config, title1: `${pName} 님과 함께 갈`, title2: "로맨틱한 코스를 준비했어요", subtitle: "우리 둘만의 특별한 시간을 만들어보세요 👩‍❤️‍👨", emoji: "💕", gradient: "bg-gradient-to-r from-pink-500 via-rose-500 to-red-500", bgGradient: "bg-gradient-to-br from-pink-100 via-rose-50 to-red-50", blob1: "bg-pink-300", blob2: "bg-rose-300", shadow: "shadow-pink-300/50" };
-      } else if (activeRoom.type === 'friend') {
-        const fCount = activeRoom.members.length;
-        config = { ...config, title1: `${activeRoom.members[0]?.name || "친구"} 님${fCount > 1 ? ` 외 ${fCount - 1}명` : ""}과 함께 갈`, title2: "힙한 핫플을 찾아왔어요", subtitle: "트렌디한 장소에서 즐거운 시간 보내세요 🍻", emoji: "⭐", gradient: "bg-gradient-to-r from-yellow-500 via-orange-500 to-amber-500", bgGradient: "bg-gradient-to-br from-yellow-100 via-orange-50 to-amber-50", blob1: "bg-yellow-300", blob2: "bg-orange-300", shadow: "shadow-yellow-300/50" };
-      } else if (activeRoom.type === 'family') {
-        config = { ...config, title1: "가족들과 함께 가기 좋은", title2: "편안한 나들이 코스예요", subtitle: "모두가 편하게 즐길 수 있는 장소를 찾아드려요 🌳", emoji: "👨‍👩‍👧‍👦", gradient: "bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500", bgGradient: "bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50", blob1: "bg-green-300", blob2: "bg-emerald-300", shadow: "shadow-green-300/50" };
+      // 💡 수정포인트 1: 백엔드에서 주는 이름표인 'roomType'으로 변경!
+      const rType = activeRoom.roomType; 
+      // 💡 수정포인트 2: 멤버 이름 대신 백엔드에서 주는 'roomName'(방 이름) 사용!
+      const rName = activeRoom.roomName || activeRoom.name || "우리"; 
+
+      if (rType === 'couple') {
+        config = { ...config, title1: `[${rName}] 방을 위한`, title2: "로맨틱한 코스를 준비했어요", subtitle: "우리 둘만의 특별한 시간을 만들어보세요 👩‍❤️‍👨", emoji: "💕", gradient: "bg-gradient-to-r from-pink-500 via-rose-500 to-red-500", bgGradient: "bg-gradient-to-br from-pink-100 via-rose-50 to-red-50", blob1: "bg-pink-300", blob2: "bg-rose-300", shadow: "shadow-pink-300/50" };
+      } else if (rType === 'friend') {
+        config = { ...config, title1: `[${rName}] 방 친구들과 갈`, title2: "힙한 핫플을 찾아왔어요", subtitle: "트렌디한 장소에서 즐거운 시간 보내세요 🍻", emoji: "⭐", gradient: "bg-gradient-to-r from-yellow-500 via-orange-500 to-amber-500", bgGradient: "bg-gradient-to-br from-yellow-100 via-orange-50 to-amber-50", blob1: "bg-yellow-300", blob2: "bg-orange-300", shadow: "shadow-yellow-300/50" };
+      } else if (rType === 'family') {
+        config = { ...config, title1: `[${rName}] 가족들과 가기 좋은`, title2: "편안한 나들이 코스예요", subtitle: "모두가 편하게 즐길 수 있는 장소를 찾아드려요 🌳", emoji: "👨‍👩‍👧‍👦", gradient: "bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500", bgGradient: "bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50", blob1: "bg-green-300", blob2: "bg-emerald-300", shadow: "shadow-green-300/50" };
       }
     }
+
 
     // UI 반영
     body.className = `min-h-screen transition-colors duration-500 flex flex-col overflow-auto ${config.bgGradient}`;
@@ -184,11 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   };
 
-  window.selectRoom = (id) => {
-    activeRoom = allRooms.find(r => r.id === id);
+// 방 선택 함수 (수정됨)
+window.selectRoom = (id) => {
+    // 💡 r.id를 String으로 바꿔서 글자끼리 안전하게 비교하도록 수정!
+    activeRoom = allRooms.find(r => String(r.id) === String(id)); 
+    
+    console.log("선택된 방 데이터:", activeRoom); // 👈 잘 들어왔는지 CCTV도 하나 달아둡시다!
+    
     modal.classList.add('hidden');
     applyTheme();
-  };
+};
 
   // 모달 토글
   document.getElementById('btnOpenRoomSelector').addEventListener('click', () => { modal.classList.remove('hidden'); });
@@ -202,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPopularCourses();
   renderRooms();
 });
+
 // 💡 새로운 방을 생성해서 서버로 보내는 함수
 async function createNewRoom(roomName, roomType) {
     // 1. 로컬스토리지에서 현재 로그인한 내 아이디 꺼내기
