@@ -18,20 +18,33 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
         // 3. 서버 응답에 따른 처리
         if (response.ok) {
-            // ✅ 로그인 성공 시에만 로컬 스토리지에 아이디 저장
+            // ✅ 로그인 성공 시 로컬 스토리지에 아이디 저장
             localStorage.setItem("loginId", username);
 
-            // 취향 데이터 존재 여부에 따라 페이지 리다이렉션 처리
-            const userTaste = localStorage.getItem('userTaste');
-            if (!userTaste) {
-                window.location.href = "/taste-setup"; // 취향 세팅 안 되어 있으면 설정 페이지로
-            } else {
-                window.location.href = "/home";        // 설정되어 있으면 메인 홈 화면으로
+            // 💡 DB에서 이 유저의 진짜 정보를 가져와서 취향이 설정되어 있는지 확인!
+            try {
+                const userRes = await fetch(`/api/user?login_id=${username}`);
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+            
+                    // 유저 데이터에 취향(likeVibe 등)이 비어있으면 (우리가 아까 가입할 때 "" 로 보냈죠?)
+                    if (!userData.likeVibe || userData.likeVibe === "") {
+                        window.location.href = "/taste-setup"; // 취향 설정 페이지로 이동!
+                    } else {
+                        // 이미 취향이 있다면 로컬 스토리지도 최신화해주고 홈으로 이동
+                        localStorage.setItem("userTaste", "true"); 
+                        window.location.href = "/home"; 
+                    }
+                }
+            } catch (error) {
+                console.error("유저 정보 확인 실패:", error);
+                window.location.href = "/home"; // 에러 나면 일단 홈으로
             }
+
         } else {
-            // ❌ 로그인 실패 시 (비밀번호 틀림, 없는 아이디 등)
-            const errorMsg = await response.text(); 
-            alert(errorMsg); // 팝업으로 에러 메시지 띄우기
+            // ❌ 로그인 실패 시
+            const errorMsg = await response.text();
+            alert(errorMsg);
         }
     } catch (error) {
         console.error("로그인 통신 에러:", error);

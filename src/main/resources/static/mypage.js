@@ -354,7 +354,7 @@ async function loadUserInfo() {
 
 // 💡 2. 방 목록 불러오기
 async function renderMyRooms() {
-    const container = document.getElementById('myRoomsContainer');
+    const container = document.getElementById('roomsContainer');
     if (!container) return;
     const loginId = localStorage.getItem("loginId");
     if (!loginId) return;
@@ -371,17 +371,33 @@ async function renderMyRooms() {
 
         let html = '';
         myRooms.forEach((room) => {
-            const isRoomAdmin = room.adminId === loginId; 
+            const isRoomAdmin = room.adminId === loginId;
+            
+            // 💡 백엔드에서 넘겨주는 상태값 확인 (가입 대기중인지 여부)
+            // 백엔드 API에서 상태를 memberStatus 같은 이름으로 준다고 가정했습니다.
+            const isPending = room.memberStatus === 'PENDING'; 
+
             html += `
               <div class="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl mb-3 bg-white shadow-sm">
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800">${room.name || room.roomName || room.room_name}</h3>
+                  <div class="flex items-center gap-2">
+                      <h3 class="text-lg font-bold text-gray-800">${room.name || room.roomName || room.room_name}</h3>
+                      
+                      <!-- ⏳ 일반 멤버이고 승인 대기중일 때만 뱃지 표시 -->
+                      ${!isRoomAdmin && isPending ? `<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold">⏳ 승인 대기중</span>` : ''}
+                  </div>
                   <p class="text-xs text-gray-500 mt-1">초대 코드: <span class="font-mono bg-gray-100 px-1">${room.inviteCode || "발급안됨"}</span></p>
                 </div>
-                ${isRoomAdmin 
-                    ? `<button onclick="deleteRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100">🗑️ 방 삭제</button>` 
-                    : `<button onclick="leaveRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-gray-50 text-gray-600 font-semibold rounded-lg hover:bg-gray-100">🏃‍♂️ 탈퇴하기</button>`
-                }
+                
+                <div class="flex gap-2">
+                    ${isRoomAdmin 
+                        ? ` <!-- 방장 전용 버튼 2개 -->
+                            <button onclick="openMemberManageModal('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition-colors">👥 멤버 관리</button>
+                            <button onclick="deleteRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">💣 방 없애기</button>` 
+                        : ` <!-- 일반 멤버 전용 버튼 1개 -->
+                            <button onclick="leaveRoom('${room.id || room.roomId || room.room_id}')" class="text-sm px-4 py-2 bg-gray-50 text-gray-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors">🏃‍♂️ 방 나가기</button>`
+                    }
+                </div>
               </div>
             `;
         });
@@ -390,7 +406,7 @@ async function renderMyRooms() {
 }
 
 // 💡 3. 방 삭제 기능 (방장용)
-async function deleteRoom(roomId) {
+window.deleteRoom = async (roomId) => {
     if (!confirm("정말 이 방을 삭제하시겠습니까? 🗑️")) return;
     try {
         const response = await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
@@ -399,28 +415,173 @@ async function deleteRoom(roomId) {
 }
 
 // 💡 4. 방 탈퇴 기능 (멤버용)
-async function leaveRoom(roomId) {
+window.leaveRoom = async (roomId) => {
     const loginId = localStorage.getItem("loginId");
-    if (!confirm("이 방에서 정말 탈퇴하시겠습니까? 🏃‍♂️")) return;
+    if (!confirm("이 방에서 정말 나가시겠습니까? 🏃‍♂️")) return;
     try {
         const response = await fetch(`/api/rooms/${roomId}/leave?login_id=${loginId}`, { method: 'POST' });
-        if (response.ok) { alert("방에서 탈퇴했습니다."); window.location.reload(); }
+        if (response.ok) { alert("방에서 나갔습니다."); window.location.reload(); }
     } catch (error) { console.error(error); }
 }
 
-// 💡 5. 초대 코드로 가입 기능
-async function joinRoomWithCode() {
-    const inviteCode = prompt("방장이 알려준 초대 코드를 입력해 주세요: 🎟️");
-    if (!inviteCode || inviteCode.trim() === "") return; 
-    const loginId = localStorage.getItem("loginId");
-    try {
-        const response = await fetch('/api/rooms/join', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login_id: loginId, invite_code: inviteCode.trim() })
-        });
-        if (response.ok) { alert("방에 성공적으로 참여했습니다! 🎉"); window.location.reload(); }
-        else { alert("초대 코드가 틀렸거나 참여할 수 없는 방입니다."); }
-    } catch (error) { console.error(error); }
+// ==========================================
+// 💡 5. [초대코드로 방 참여] 모달 관련 로직
+// ==========================================
+const btnOpenJoinModal = document.getElementById('btn-open-join-modal');
+const joinRoomModal = document.getElementById('joinRoomModal');
+const btnCloseJoinModal = document.getElementById('btn-close-join-modal');
+const btnCancelJoin = document.getElementById('btn-cancel-join');
+const btnSubmitJoin = document.getElementById('btn-submit-join');
+const inviteCodeInput = document.getElementById('inviteCodeInput');
+
+// 모달 열기
+if (btnOpenJoinModal) {
+    btnOpenJoinModal.addEventListener('click', () => {
+        joinRoomModal.classList.remove('hidden');
+        if (inviteCodeInput) {
+            inviteCodeInput.value = '';
+            inviteCodeInput.focus();
+        }
+    });
 }
+
+// 모달 닫기 함수
+const closeJoinModal = () => {
+    if (joinRoomModal) joinRoomModal.classList.add('hidden');
+};
+
+// X 버튼이나 취소 버튼 누르면 닫기
+if (btnCloseJoinModal) btnCloseJoinModal.addEventListener('click', closeJoinModal);
+if (btnCancelJoin) btnCancelJoin.addEventListener('click', closeJoinModal);
+
+// [참여하기] 버튼 눌렀을 때 서버 통신
+if (btnSubmitJoin) {
+    btnSubmitJoin.addEventListener('click', async () => {
+        const code = inviteCodeInput.value.trim();
+        
+        if (!code) {
+            alert("초대 코드를 입력해주세요!");
+            inviteCodeInput.focus();
+            return;
+        }
+
+        const loginId = localStorage.getItem("loginId");
+        if (!loginId) {
+            alert("로그인 정보가 없습니다.");
+            return;
+        }
+
+        try {
+            // 스프링 부트 서버로 참여 요청 (기존 백엔드 규격에 맞춤)
+            const response = await fetch('/api/rooms/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    login_id: loginId, 
+                    invite_code: code 
+                })
+            });
+
+            if (response.ok) {
+                alert("방에 성공적으로 참여했습니다! 🎉");
+                closeJoinModal();
+                window.location.reload(); // 성공 시 새로고침하여 목록 갱신
+            } else {
+                const errorMsg = await response.text();
+                alert(errorMsg || "초대 코드가 틀렸거나 참여할 수 없는 방입니다.");
+            }
+        } catch (error) {
+            console.error("초대코드 전송 에러:", error);
+            alert("서버와 통신 중 문제가 발생했습니다.");
+        }
+    });
+}
+// ==========================================
+// 👥 [멤버 관리] 모달 관련 로직 (방장 전용)
+// ==========================================
+const memberManageModal = document.getElementById('memberManageModal');
+const memberListContainer = document.getElementById('memberListContainer');
+
+// 1. 멤버 관리 창 열기
+window.openMemberManageModal = async (roomId) => {
+    // 1. 모달 띄우기
+    memberManageModal.classList.remove('hidden');
+    memberListContainer.innerHTML = '<p class="text-center text-gray-500 py-4 text-sm">멤버 정보를 불러오는 중입니다...</p>';
+
+    // 2. 백엔드에서 이 방의 멤버 목록(대기자 포함) 가져오기
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/members`);
+        if (!response.ok) throw new Error("멤버 목록을 불러오지 못했습니다.");
+        
+        const members = await response.json();
+        
+        // 3. 목록 그리기
+        if (members.length === 0) {
+            memberListContainer.innerHTML = '<p class="text-center text-gray-500 py-4 text-sm">참여 중인 멤버가 없습니다.</p>';
+            return;
+        }
+
+        let html = '';
+        members.forEach(member => {
+            // 멤버 상태에 따라 뱃지와 버튼 다르게 그리기
+            const isPending = member.status === 'PENDING';
+            
+            html += `
+                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg ${isPending ? 'bg-yellow-50/50 border-yellow-200' : 'bg-white'}">
+                    <div>
+                        <p class="font-bold text-gray-800 flex items-center gap-2">
+                            ${member.userId} 
+                            ${isPending ? '<span class="text-[10px] bg-yellow-400 text-white px-1.5 py-0.5 rounded">대기중</span>' : ''}
+                            ${member.role === 'HOST' ? '<span class="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded">방장</span>' : ''}
+                        </p>
+                    </div>
+                    
+                    <div class="flex gap-1">
+                        ${isPending ? `
+                            <button onclick="approveMember(${member.roomId}, '${member.userId}')" class="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">승인</button>
+                            <button onclick="rejectMember(${member.roomId}, '${member.userId}')" class="text-xs px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200">거절</button>
+                        ` : `
+                            ${member.role !== 'HOST' ? `<button onclick="rejectMember(${member.roomId}, '${member.userId}')" class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200">추방</button>` : ''}
+                        `}
+                    </div>
+                </div>
+            `;
+        });
+        
+        memberListContainer.innerHTML = html;
+
+    } catch (error) {
+        console.error(error);
+        memberListContainer.innerHTML = '<p class="text-center text-red-500 py-4 text-sm">오류가 발생했습니다.</p>';
+    }
+};
+
+// 2. 멤버 관리 창 닫기
+window.closeMemberManageModal = () => {
+    memberManageModal.classList.add('hidden');
+};
+
+// 3. 멤버 승인 (진짜 백엔드 통신)
+window.approveMember = async (roomId, userId) => {
+    if(!confirm(`${userId}님을 승인하시겠습니까?`)) return;
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/members/${userId}/approve`, { method: 'PUT' });
+        if (response.ok) {
+            alert(`${userId}님을 승인했습니다! 🎉`);
+            openMemberManageModal(roomId); // 모달창 목록 새로고침
+        }
+    } catch (error) { console.error(error); }
+};
+
+// 4. 멤버 거절/추방 (진짜 백엔드 통신)
+window.rejectMember = async (roomId, userId) => {
+    if(!confirm(`${userId}님을 정말 거절/추방하시겠습니까? 💥`)) return;
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/members/${userId}/reject`, { method: 'DELETE' });
+        if (response.ok) {
+            alert(`${userId}님을 추방했습니다.`);
+            openMemberManageModal(roomId); // 모달창 목록 새로고침
+        }
+    } catch (error) { console.error(error); }
+};
 });

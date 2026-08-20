@@ -29,5 +29,20 @@ CREATE TABLE room_member (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,       -- 고유 식별 번호
     room_id BIGINT,                             -- 몇번방 기록인가
     user_id VARCHAR(255),                       -- 어떤 유저 기록인가
-    role VARCHAR(50)                            -- 방장인지 일반 멤버인지 구분
+    role VARCHAR(50),                           -- 방장인지 일반 멤버인지 구분
+    status VARCHAR(50) DEFAULT 'PENDING'        -- PENDING = 대기중 , ACCEPTED = 승인됨 구분            
+);
+--4. place 테이블 
+CREATE TABLE IF NOT EXISTS place (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    address VARCHAR(255),                       --실제 도로명,지번 주소 
+    category VARCHAR(255),                      --장소 종류 유저 취향 분석할 때 중요한 기준됨
+    course_id BIGINT,                           --이 장소가 어떤 데이트코스묶음에 속해 있는지
+    description TEXT,                           --장소 설명 글
+    latitude DECIMAL,                           --위도 y 좌표
+    longitude DECIMAL,                          --경도 x 좌표
+    opening_hours VARCHAR(255),                 --영업 시간
+    place_name VARCHAR(255),                    --장소 실제 이름
+    rating DECIMAL,                             --별점
+    visit_order INT                             --코스 동선을 순서대로 그릴때 사용(코스 내에서 방문 순서)
 );

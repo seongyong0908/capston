@@ -15,4 +15,5 @@ public class RoomMember {
     private Long roomId; // 어떤 방인지 번호 저장
     private String userId; // 누구인지 아이디 저장 (ksy0908 등)
     private String role; // 방장(HOST)인지 멤버(MEMBER)인지
+    private String status = "PENDING";
 }

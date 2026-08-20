@@ -10,11 +10,11 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
   const phone = document.getElementById('phone').value;
   const password = document.getElementById('password').value;
   const passwordConfirm = document.getElementById('password-confirm').value;
-  const likeVibe = document.getElementById('like_vibe').value;
-  const hateAct = document.getElementById('hate_act').value;
-  const foodLimit = document.getElementById('food_limit').value;
-  const foodMemo = document.getElementById('food_memo').value;
-
+  const likeVibe = document.getElementById('like_vibe') ? document.getElementById('like_vibe').value : "";
+  const hateAct = document.getElementById('hate_act') ? document.getElementById('hate_act').value : "";
+  const foodLimit = document.getElementById('food_limit') ? document.getElementById('food_limit').value : "";
+  const foodMemo = document.getElementById('food_memo') ? document.getElementById('food_memo').value : "";
+  
   // 비밀번호 일치 검사
   if (password !== passwordConfirm) {
     alert("비밀번호가 일치하지 않습니다. 다시 확인해주세요.");
