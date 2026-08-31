@@ -100,4 +100,37 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
   renderSequence();
   renderMoods();
+  
+  console.log("🚀 JS 파일 로드 완료!!");
+
+  document.getElementById("btnSubmit").addEventListener("click", function(e) {
+    e.preventDefault(); // 페이지 이동 방지
+
+    // 파이썬(main.py)이 요구하는 완벽한 구조
+    const requestData = {
+        tastes: ["조용한", "매운맛"],
+        places: [
+            { "id": 1, "name": "A카페" },
+            { "id": 2, "name": "B식당" }
+        ]
+    };
+
+    console.log("1. 스프링 부트로 데이터 전송 시작!", requestData);
+
+    fetch('/api/get-course', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("🎉 3. AI 추천 결과 도착 (대성공)!:", data);
+        alert("통신 성공! F12 콘솔창을 확인하고 캡처하세요!");
+    })
+    .catch(error => {
+        console.error("앗, 에러 발생:", error);
+    });
+});
 });
