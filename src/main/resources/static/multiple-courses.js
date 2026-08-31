@@ -4,30 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 3가지 가상 코스 데이터
   const coursesData = [
-    {
-      id: 'A', name: '코스 A', budget: '65,000', time: '3시간 30분',
-      places: [
-        { id: 'p1', name: '홍대 감성 카페', category: '카페', emoji: '☕' },
-        { id: 'p2', name: '트릭아이 미술관', category: '전시회', emoji: '🖼️' },
-        { id: 'p3', name: '루프탑 레스토랑', category: '레스토랑', emoji: '🍽️' }
-      ]
-    },
-    {
-      id: 'B', name: '코스 B', budget: '80,000', time: '4시간 15분',
-      places: [
-        { id: 'p4', name: '연남동 핫플 식당', category: '식당', emoji: '🍝' },
-        { id: 'p5', name: '셀프 사진관', category: '액티비티', emoji: '📸' },
-        { id: 'p6', name: '분위기 좋은 칵테일바', category: '바', emoji: '🍸' }
-      ]
-    },
-    {
-      id: 'C', name: '코스 C', budget: '45,000', time: '3시간 0분',
-      places: [
-        { id: 'p7', name: '경의선 숲길', category: '공원/산책', emoji: '🌳' },
-        { id: 'p8', name: '소품샵 투어', category: '쇼핑', emoji: '🛍️' },
-        { id: 'p9', name: '아늑한 디저트 카페', category: '카페', emoji: '🍰' }
-      ]
-    }
+   
   ];
 
   const container = document.getElementById('coursesContainer');

@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 초기 렌더링
-  renderCompanions();
+  //renderCompanions();
   renderCategories();
   renderSequence();
   renderMoods();
