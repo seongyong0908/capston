@@ -37,6 +37,3 @@ out/
 .vscode/
 # 구글 API 키 숨기기
 src/main/resources/application.properties
-### Python ###
-__pycache__/
-*.pyc
