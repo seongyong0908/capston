@@ -6,7 +6,7 @@ from google import genai
 app = FastAPI()
 
 # 본인의 API 키
-client = genai.Client(api_key="AQ.Ab8RN6J80P4GBEl70cA9rPXQ18UGgUn-WQSaP-csWL3mQikELQ")
+client = genai.Client(api_key="GEMINI_API_KEY")
 
 # 스프링 부트에서 넘어오는 데이터를 유연하게 다 받도록 수정
 class DateRequest(BaseModel):
