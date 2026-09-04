@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8">
+    <title>데이트 코스 지도 📍</title>
+    <style>
+        /* 화면 꽉 차게 설정 */
+        body, html { margin: 0; padding: 0; height: 100%; }
+        #map { width: 100vw; height: 100vh; }
+        
+        /* 상단 제목 예쁘게 꾸미기 */
+        .map-title {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10; background: white; padding: 10px 20px;
+            border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-family: sans-serif; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="history.back()" style="position: absolute; top: 20px; left: 20px; z-index: 99999; background-color: #333; color: white; border: none; border-radius: 8px; padding: 10px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+    ⬅ 뒤로 가기
+    </button>
+
+    <div class="map-title" id="findNearbyBtn" style="cursor:pointer;">📍 내 주변 데이트 코스 찾기</div>
+
+    <div id="map"></div>
+
+
+    // 내 위치로 돌아갈 수 있는 버튼 추가
+    <button id="myLocationBtn" style="position: absolute; bottom: 30px; right: 20px; z-index: 99999; background-color: white; color: #333; border: 2px solid #333; border-radius: 50%; width: 50px; height: 50px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+    📍
+    </button>
+    
+    
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=2a8976a8da89c67bc06504f361dd1b69&libraries=services&autoload=false"></script>
+    
+    <script th:inline="javascript">
+
+        window.onload = function() {
+
+            kakao.maps.load(function() {
+                const container = document.getElementById("map");
+                const options = {
+                    center: new kakao.maps.LatLng(37.5665, 126.9780),
+                    level: 5
+                };
+
+                const map = new kakao.maps.Map(container, options);
+
+                // 현재 내 위치를 저장할 변수 (아직 못 찾았으면 null)
+                let myPosition = null;
+                let myMarker = null;
+                let placeMarkers = []; // 찍힌 장소 마커들을 기억해서 나중에 지울 때 사용
+
+                // 두 좌표 사이의 실제 거리(km)를 구하는 하버사인 공식
+                function getDistanceKm(lat1, lng1, lat2, lng2) {
+                    const R = 6371; // 지구 반지름(km)
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLng = (lng2 - lng1) * Math.PI / 180;
+                    const a =
+                        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    return R * c;
+                }
+
+                // ==========================================
+                // 기능 1. 버튼 클릭 시 반경 3km 이내 장소 마커 찍기
+                // ==========================================
+               document.getElementById("findNearbyBtn").addEventListener("click", function () {
+                 fetch(`/api/place/nearby?lat=${myPosition.lat}&lng=${myPosition.lng}&radius=3`)
+                    .then(response => response.json())
+                    .then(nearbyPlaces => {
+                        if (nearbyPlaces.length === 0) {
+                            alert("반경 3km 이내에 등록된 데이트 코스가 없어요 😢");
+                            return;
+                        }
+
+                        // 지도 범위를 계산할 bounds 객체 생성
+                        const bounds = new kakao.maps.LatLngBounds();
+
+                        // 내 위치도 범위에 포함
+                        bounds.extend(new kakao.maps.LatLng(myPosition.lat, myPosition.lng));
+
+                        nearbyPlaces.forEach(place => {
+                            const markerPosition = new kakao.maps.LatLng(place.latitude, place.longitude);
+                            const marker = new kakao.maps.Marker({
+                                position: markerPosition,
+                                title: place.placeName
+                            });
+                            marker.setMap(map);
+                            placeMarkers.push(marker);
+
+                            bounds.extend(markerPosition); // 범위에 이 마커 위치 추가
+
+                            const infoContent = `
+                                <div style="padding:10px; max-width:250px; font-size:13px;">
+                                    <strong style="font-size:15px;">${place.placeName ?? ''}</strong><br/>
+                                    <span style="color:gray;">${place.category ?? ''}</span><br/>
+                                    <p style="margin:5px 0;">${place.address ?? ''}</p>
+                                    <p style="color:#666; font-size:12px;">${place.description ?? ''}</p>
+                                </div>
+                            `;
+
+                            const infowindow = new kakao.maps.InfoWindow({
+                                content: infoContent,
+                                removable: true
+                            });
+
+                            kakao.maps.event.addListener(marker, 'click', function () {
+                                infowindow.open(map, marker);
+                            });
+                        });
+
+                        // 모든 마커(+ 내 위치)가 화면에 다 보이도록 지도 범위 자동 조정
+                        map.setBounds(bounds);
+
+                        alert(`반경 3km 이내에서 ${nearbyPlaces.length}개의 데이트 코스를 찾았어요! 🎉`);
+                    })
+                    .catch(err => {
+                        console.error("장소 데이터를 불러오는 데 실패했습니다:", err);
+                        alert("장소 데이터를 불러오는 데 실패했어요.");
+                    });
+                });
+
+                // ==========================================
+                // 기능 2. 내 현재 위치 찾아서 지도 이동하기
+                // ==========================================
+                function moveToMyLocation(showAlert) {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function(pos) {
+                                const myLat = pos.coords.latitude;
+                                const myLng = pos.coords.longitude;
+                                myPosition = { lat: myLat, lng: myLng };
+
+                                const myPos = new kakao.maps.LatLng(myLat, myLng);
+                                map.setCenter(myPos);
+
+                                if (myMarker) {
+                                    myMarker.setMap(null); // 기존 내 위치 마커 제거
+                                }
+
+                                // 파란 점 스타일의 내 위치 마커
+                                const myMarkerContent = document.createElement('div');
+                                myMarkerContent.style.width = '20px';
+                                myMarkerContent.style.height = '20px';
+                                myMarkerContent.style.borderRadius = '50%';
+                                myMarkerContent.style.backgroundColor = '#4285F4';
+                                myMarkerContent.style.border = '3px solid white';
+                                myMarkerContent.style.boxShadow = '0 0 6px rgba(0,0,0,0.4)';
+
+                                myMarker = new kakao.maps.CustomOverlay({
+                                    position: myPos,
+                                    content: myMarkerContent,
+                                    yAnchor: 0.5
+                                });
+                                myMarker.setMap(map);
+
+                                if (showAlert) {
+                                    alert("내 위치로 이동했어요!");
+                                }
+                            },
+                            function(error) {
+                                console.error("위치 정보를 가져오는 데 실패했습니다:", error);
+                                if (showAlert) {
+                                    alert("위치 정보를 가져올 수 없어요. 위치 권한을 확인해주세요.");
+                                }
+                            }
+                        );
+                    } else {
+                        console.warn("이 브라우저에서는 위치 정보를 지원하지 않습니다.");
+                    }
+                }
+
+                // 페이지 로드 시 자동으로 내 위치 찾기 (알림 없이 조용히)
+                moveToMyLocation(false);
+
+                // "내 위치" 버튼 클릭 시 다시 내 위치로 이동 (알림 표시)
+                document.getElementById("myLocationBtn").addEventListener("click", function () {
+                    moveToMyLocation(false);  // true → false로 변경
+                });
+            });
+        };
+    </script>
+    
+    
+</body>
+</html>
