@@ -17,10 +17,10 @@ public class Place {
     @Column(name = "place_name", nullable = false)
     private String placeName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 15, scale = 12)
     private BigDecimal latitude;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 16, scale = 12)
     private BigDecimal longitude;
 
     @Column(name = "visit_order", nullable = false)

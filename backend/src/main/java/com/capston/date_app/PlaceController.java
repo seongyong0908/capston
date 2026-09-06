@@ -16,4 +16,12 @@ public class PlaceController {
     public List<Place> getAllPlaces() {
         return placeRepository.findAll();
     }
+
+    @GetMapping("/nearby")
+    public List<Place> getNearbyPlaces(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "3") double radius) {
+        return placeRepository.findNearbyPlaces(lat, lng, radius);
+    }
 }
