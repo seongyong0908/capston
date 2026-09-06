@@ -7,58 +7,58 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController; // @Controller 대신 사용
+import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import java.util.Map;
 
-@RestController // 💡 JSON 데이터를 주고받기 위해 RestController로 변경합니다.
+@RestController
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserRepository userRepository;
+    private final PreferenceRepository preferenceRepository;
 
     @PostMapping("/signup")
     public String signup(@RequestBody Map<String, String> data) {
-        // 🔥 데이터가 잘 넘어왔는지 콘솔에 출력해 확인합니다.
         System.out.println("🔥 회원가입 데이터 도착: " + data);
 
         User newUser = new User();
-        // Map에서 데이터를 키(key) 값으로 쏙쏙 뽑아옵니다.
         newUser.setName(data.get("name"));
         newUser.setLoginId(data.get("login_id"));
         newUser.setPassword(data.get("password"));
         newUser.setPhone(data.get("phone"));
         newUser.setEmail(data.get("email"));
 
-        // DB에 저장
         userRepository.save(newUser);
 
-        // 자바스크립트의 fetch(.then(res => if(res.ok))) 부분에 성공 신호를 보냅니다.
         return "success";
     }
+
     @PostMapping("/api/taste-setup")
-    @ResponseBody // 💡 핵심: 화면 이동이 아니라 글자("success") 데이터만 응답하겠다는 마법의 어노테이션!
+    @ResponseBody
     public String tasteSetup(@RequestBody Map<String, String> data) {
         String loginId = data.get("login_id");
         System.out.println("🔥 취향 설정 데이터 도착. 대상 아이디: " + loginId);
-        System.out.println("받은 데이터: " + data); // 추가로 어떤 데이터가 왔는지 다 찍어봅니다.
 
-        // 1. DB에서 해당 아이디의 유저를 찾습니다.
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
-        // 2. 찾아온 유저 객체에 취향 데이터를 채워 넣습니다.
-        user.setLikeVibe(data.get("like_vibe"));
-        user.setHateAct(data.get("hate_act"));
-        user.setFoodLimit(data.get("food_limit"));
-        user.setFoodMemo(data.get("food_memo"));
+        Preference preference = preferenceRepository.findByUser(user);
+        if (preference == null) {
+            preference = new Preference();
+            preference.setUser(user);
+        }
 
-        // 3. DB에 업데이트
-        userRepository.save(user);
+        preference.setLikeVibe(data.get("like_vibe"));
+        preference.setHateAct(data.get("hate_act"));
+        preference.setFoodLimit(data.get("food_limit"));
+        preference.setFoodMemo(data.get("food_memo"));
+
+        preferenceRepository.save(preference);
 
         return "success";
     }
-    // 💡 로그인 검증 API
+
     @PostMapping("/api/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> data) {
         String loginId = data.get("login_id");
@@ -66,45 +66,36 @@ public class UserController {
 
         System.out.println("🔥 로그인 시도 아이디: " + loginId);
 
-        // 1. DB에서 loginId로 유저 찾기
+
         User user = userRepository.findByLoginId(loginId).orElse(null);
 
-        // 2. 유저가 없거나 비밀번호가 틀리면 거절 (401 에러)
         if (user == null || !user.getPassword().equals(password)) {
             return ResponseEntity.status(401).body("아이디 또는 비밀번호가 틀렸습니다.");
         }
 
-        // 3. 로그인 성공 시
         return ResponseEntity.ok("success");
     }
-    // 💡 마이페이지용 내 정보 조회 API
+
     @GetMapping("/api/user")
     public User getUserInfo(@RequestParam("login_id") String loginId) {
         System.out.println("🔥 마이페이지 정보 요청 들어온 아이디: " + loginId);
-        
-        // 취향 설정 API에서 쓰던 방식 그대로 유저를 찾아옵니다!
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-        
-        return user; // 유저 객체를 통째로 JSON으로 응답합니다!
+        return user;
     }
-    // 💡 마이페이지 프로필 수정(저장) API
+
     @PutMapping("/api/user")
-    public String updateUserInfo(@RequestParam("login_id") String loginId, @RequestBody java.util.Map<String, String> data) {
+    public String updateUserInfo(@RequestParam("login_id") String loginId, @RequestBody Map<String, String> data) {
         System.out.println("🔥 프로필 수정 요청 들어온 아이디: " + loginId);
-        
-        // 1. DB에서 유저를 찾습니다.
+
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
         
-        // 2. 수정된 데이터로 갱신합니다.
         user.setName(data.get("name"));
         user.setEmail(data.get("email"));
         user.setPhone(data.get("phone"));
         
-        // 3. DB에 다시 저장합니다.
         userRepository.save(user);
-        
         return "success";
     }
 }

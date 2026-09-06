@@ -28,11 +28,6 @@ public class User {
 
     private String email;
 
-    // 방금 쉽게 바꾼 취향 정보 변수명들!
-    private String likeVibe;
-    private String hateAct;
-    private String foodLimit;
-    
-    @Column(columnDefinition = "TEXT")
-    private String foodMemo;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Preference preference;
 }

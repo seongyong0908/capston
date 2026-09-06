@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS ai_request (
     room_id BIGINT NOT NULL,
     target_region VARCHAR(100),
     target_budget INT,
+    transportation VARCHAR(100), 
+    duration VARCHAR(100),
     CONSTRAINT fk_ai_request_room FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE
 );
 

@@ -2,11 +2,15 @@ from typing import Any, List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from google import genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
 # 본인의 API 키
-client = genai.Client(api_key="GEMINI_API_KEY")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # 스프링 부트에서 넘어오는 데이터를 유연하게 다 받도록 수정
 class DateRequest(BaseModel):
@@ -23,12 +27,17 @@ async def get_recommendation(request: DateRequest):
     user_prompt = f"사용자의 취향은 다음과 같습니다: {request.tastes}. 이 취향에 맞는 데이트 코스를 추천해줘."
 
     try:
-        # 가장 안정적이고 확실한 모델명으로 변경
+        # 가장 기본적이고 확실하게 텍스트만 받아오도록 설정
         response = client.models.generate_content(
             model='gemini-3.6-flash',
             contents=user_prompt,
         )
-        ai_text = response.text
+        
+        # response.text가 비어있지 않은지 안전하게 확인
+        if response.text:
+            ai_text = response.text
+        else:
+            ai_text = "AI가 빈 답변을 반환했습니다."
     except Exception as e:
         print("AI 호출 중 에러 발생 (할당량 초과 등으로 기본 코스 대체):", e)
         # 할당량 초과 시 화면이 깨지지 않고 코스가 출력되도록 임시 텍스트 설정
