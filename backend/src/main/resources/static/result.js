@@ -45,20 +45,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // -- 함수: 코스 목록 렌더링 --
   const renderCourse = () => {
-    // 1. 지도 렌더링
-    let mapHtml = `<div class="flex items-center gap-4">`;
-    currentCourse.forEach((place, index) => {
-      mapHtml += `
-        <div class="flex items-center">
-          <div class="relative">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br ${place.color} flex items-center justify-center text-white font-bold shadow-xl border-4 border-white z-10">${index + 1}</div>
-            <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold bg-white px-2 py-1 rounded shadow text-gray-800">${place.name.length > 8 ? place.name.substring(0,8)+'...' : place.name}</div>
-          </div>
-          ${index < currentCourse.length - 1 ? `<div class="w-8 h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-2"></div>` : ''}
-        </div>`;
+    // 1. 진짜 카카오맵 렌더링
+if (typeof kakao !== 'undefined' && kakao.maps) {
+    kakao.maps.load(function() {
+        const options = {
+            center: new kakao.maps.LatLng(37.5665, 126.9780), // 초기 중심 좌표
+            level: 5 // 확대 레벨
+        };
+
+        // simpleMapContainer 박스 안에 지도 생성
+        const map = new kakao.maps.Map(simpleMapContainer, options);
     });
-    mapHtml += `</div>`;
-    simpleMapContainer.innerHTML = mapHtml;
+}
 
     // 2. 목록 렌더링
     let listHtml = '';

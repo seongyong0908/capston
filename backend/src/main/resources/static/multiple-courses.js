@@ -1,51 +1,61 @@
 document.addEventListener('DOMContentLoaded', function() {
-  
   let selectedCourseId = null;
-
-  // 3가지 가상 코스 데이터
-  const savedData = sessionStorage.getItem('recommendedCourses');
-  const rawCourses = savedData ? JSON.parse(savedData) : [];
-
-  function formatTimeRange(timeStr) {
-    if (!timeStr || timeStr === "미정") return "미정";
-
-    const parts = timeStr.split(" ~ ");
-    if (parts.length !== 2) return timeStr;
-
-    function convert(t) {
-      const [hourStr, minStr] = t.split(":");
-      let hour = parseInt(hourStr, 10);
-      const period = hour < 12 ? "오전" : "오후";
-      let displayHour = hour % 12;
-      if (displayHour === 0) displayHour = 12;
-      return `${period} ${displayHour}시 ${minStr}분`;
-    }
-
-    return `${convert(parts[0])} ~ ${convert(parts[1])}`;
-  }
-
-  function formatBudget(budgetStr) {
-    if (!budgetStr || budgetStr === "미정") return "미정";
-    const num = Number(budgetStr);
-    if (isNaN(num)) return budgetStr;
-    return num.toLocaleString('ko-KR');
-  }
-
-  const coursesData = rawCourses.map((course, idx) => ({
-    id: course.courseId,
-    name: `AI 추천 코스 ${course.courseId}`,
-    time: formatTimeRange(course.time),
-    budget: formatBudget(course.budget),
-    places: course.places.map(item => ({
-      emoji: "📍",
-      name: item.place_name,
-      category: item.reason
-    }))
-  }));
+  // 서버에서 데이터를 받아올 빈 바구니 준비
+  let coursesData = [];
 
   const container = document.getElementById('coursesContainer');
   const actionContainer = document.getElementById('actionContainer');
   const selectCourseText = document.getElementById('selectCourseText');
+
+  // 백엔드(스프링 부트)에서 데이터를 가져오는 마법의 함수!
+  const fetchCourseData = async () => {
+    try {
+      // 1. 백엔드에 요청을 보냅니다 (주소는 백엔드 Controller에 맞게 수정하세요!)
+      const response = await fetch('http://localhost:8080/api/get-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 이전 페이지에서 누른 조건을 여기서 백엔드로 넘겨줘야 합니다. (지금은 임시 데이터)
+        body: JSON.stringify({ tastes: ['조용한', '매운맛'], places: [] }) 
+      });
+
+      // 2. 백엔드를 거쳐 파이썬에서 온 가짜 데이터를 JSON으로 변환합니다.
+      const result = await response.json();
+
+     // 3. 파이썬이 보낸 AI 응답 텍스트를 화면 양식에 맞게 쪼개서 조립합니다!
+      coursesData = [
+        {
+          id: 'course-1',
+          name: 'AI 맞춤 데이트 코스',
+          time: '약 4시간',
+          budget: '미정',
+          places: [
+            {
+              emoji: '📍',
+              name: '1단계: AI 추천 장소 및 코스 시작',
+              category: result.course[0] ? result.course[0].reason : 'AI 추천 내용 불러오는 중...'
+            },
+            {
+              emoji: '🔥',
+              name: '2단계: 메인 맛집/활동',
+              category: '조용한 분위기 속 매운맛을 즐길 수 있는 코스'
+            },
+            {
+              emoji: '☕',
+              name: '3단계: 디저트 및 마무리',
+              category: '매운 혀를 달래줄 고요한 찻집 또는 카페'
+            }
+          ]
+        }
+      ];
+
+      // 4. 조립이 끝났으니 화면에 예쁘게 그립니다.
+      renderCourses();
+
+    } catch (error) {
+      console.error("서버 통신 에러:", error);
+      container.innerHTML = '<div class="p-5 text-center text-red-500">데이터를 불러오지 못했습니다. 서버가 켜져 있는지 확인해 주세요!</div>';
+    }
+  };
 
   const renderCourses = () => {
     let html = '';
@@ -104,10 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.getElementById('btnSelectCourse').addEventListener('click', () => {
-    // 최종 결과 화면으로 이동
     window.location.href = '/results';
   });
 
-  // 초기 렌더링
-  renderCourses();
+  // ⭐️ 페이지가 로딩되면 텅 빈 렌더링 대신, 서버에 데이터 요청(fetch)을 먼저 시작합니다!
+  fetchCourseData();
 });
