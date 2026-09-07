@@ -1,6 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
   // 상태 관리
   let preferences = { companion: "연인", courseSequence: [], mood: [] };
+
+  const REGION_COORDS = {
+    "홍대/연남동": { lat: 37.5563, lng: 126.9237 },
+    "강남/청담": { lat: 37.5172, lng: 127.0473 },
+    "성수동": { lat: 37.5445, lng: 127.0559 },
+    "잠실": { lat: 37.5133, lng: 127.1000 },
+    "이태원/한남": { lat: 37.5347, lng: 126.9946 },
+    "여의도": { lat: 37.5219, lng: 126.9245 }
+  };
+
+  kakao.maps.load(function() {
+    console.log("카카오맵 SDK 로딩 완료");
+  });
   
   const companions = ["연인", "친구", "가족"];
   const categories = [
@@ -91,9 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 네비게이션
   document.getElementById('btnBack').addEventListener('click', () => window.location.href = '/home');
-  document.getElementById('btnSubmit').addEventListener('click', () => {
-    window.location.href = '/multiple-courses';
-  });
 
   // 초기 렌더링
   //renderCompanions();
@@ -104,33 +114,145 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log("🚀 JS 파일 로드 완료!!");
 
   document.getElementById("btnSubmit").addEventListener("click", function(e) {
-    e.preventDefault(); // 페이지 이동 방지
+    e.preventDefault();
 
-    // 파이썬(main.py)이 요구하는 완벽한 구조
-    const requestData = {
-        tastes: ["조용한", "매운맛"],
-        places: [
-            { "id": 1, "name": "A카페" },
-            { "id": 2, "name": "B식당" }
-        ]
-    };
+    const locSelect = document.getElementById('locSelect');
+    const locCustom = document.getElementById('locCustom');
 
-    console.log("1. 스프링 부트로 데이터 전송 시작!", requestData);
+    const isCustom = locSelect.classList.contains('hidden');
+    const selectedRegion = isCustom ? locCustom.value.trim() : locSelect.value;
 
-    fetch('/api/get-course', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("🎉 3. AI 추천 결과 도착 (대성공)!:", data);
-        alert("통신 성공! F12 콘솔창을 확인하고 캡처하세요!");
-    })
-    .catch(error => {
-        console.error("앗, 에러 발생:", error);
-    });
-});
+    if (!selectedRegion) {
+      alert("지역을 입력하거나 선택해주세요.");
+      return;
+    }
+
+    function proceedWithCoords(lat, lng) {
+      fetch(`/api/place/nearby?lat=${lat}&lng=${lng}&radius=3`)
+        .then(response => response.json())
+        .then(nearbyPlaces => {
+          if (nearbyPlaces.length === 0) {
+            alert("이 지역에 등록된 장소가 없어요.");
+            return;
+          }
+
+          const dateValue = document.getElementById('dateInput').value;
+          const startTime = document.getElementById('startTime').value;
+          const endTime = document.getElementById('endTime').value;
+
+          const peopleSelect = document.getElementById('peopleSelect');
+          const peopleCustom = document.getElementById('peopleCountCustom');
+          const peopleCount = peopleSelect.classList.contains('hidden')
+            ? peopleCustom.value
+            : peopleSelect.value;
+
+          const budgetRaw = document.getElementById('budgetInput').value;
+          const budget = budgetRaw ? budgetRaw.replace(/,/g, '') : '';
+
+          const aiMessage = document.getElementById('aiMessage').value;
+
+          const requestData = {
+            date: dateValue,
+            startTime: startTime,
+            endTime: endTime,
+            peopleCount: peopleCount,
+            budget: budget,
+            courseSequence: preferences.courseSequence,
+            mood: preferences.mood,
+            extraMessage: aiMessage,
+            places: nearbyPlaces.map(p => ({ id: p.id, name: p.placeName, category: p.category, description: p.description }))
+          };
+
+          console.log("1. 스프링 부트로 데이터 전송 시작!", requestData);
+
+          fetch('/api/get-course', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log("3. AI 추천 결과 도착:", data);
+            sessionStorage.setItem('recommendedCourses', JSON.stringify(data.courses));
+            window.location.href = '/multiple-courses';
+          })
+          .catch(error => {
+            console.error("에러 발생:", error);
+          });
+        });
+    }
+
+    const preRegisteredCoords = REGION_COORDS[selectedRegion];
+
+    if (preRegisteredCoords) {
+      proceedWithCoords(preRegisteredCoords.lat, preRegisteredCoords.lng);
+    } else {
+      const geocoder = new kakao.maps.services.Geocoder();
+      const places = new kakao.maps.services.Places();
+
+      places.keywordSearch(selectedRegion, function(result, status) {
+        if (status === kakao.maps.services.Status.OK && result.length > 0) {
+          const lat = result[0].y;
+          const lng = result[0].x;
+          proceedWithCoords(lat, lng);
+        } else {
+          alert("입력하신 지역을 찾을 수 없어요. 다른 이름으로 시도해주세요.");
+        }
+      });
+    }
+  });
+
+
+  //인원수
+  document.getElementById('peopleSelect').addEventListener('change', function() {
+  const select = this;
+  const customInput = document.getElementById('peopleCountCustom');
+  if (this.value === 'custom') {
+    select.classList.add('hidden');
+    customInput.classList.remove('hidden');
+    customInput.focus();
+  }
+  });
+
+  document.getElementById('peopleCountCustom').addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+  });
+
+  document.getElementById('peopleCountCustom').addEventListener('blur', function() {
+    if (this.value === '') {
+      this.classList.add('hidden');
+      document.getElementById('peopleSelect').classList.remove('hidden');
+      document.getElementById('peopleSelect').value = '2';
+    }
+  });
+
+  //예산
+  document.getElementById('budgetInput').addEventListener('input', function() {
+    let numericValue = this.value.replace(/[^0-9]/g, '');
+    if (numericValue) {
+      this.value = Number(numericValue).toLocaleString('ko-KR');
+    } else {
+      this.value = '';
+    }
+  });
+
+  // 추천 받을 지역
+  document.getElementById('locSelect').addEventListener('change', function() {
+    const select = this;
+    const customInput = document.getElementById('locCustom');
+    if (this.value === 'custom') {
+      select.classList.add('hidden');
+      customInput.classList.remove('hidden');
+      customInput.focus();
+    }
+  });
+
+  document.getElementById('locCustom').addEventListener('blur', function() {
+    if (this.value.trim() === '') {
+      this.classList.add('hidden');
+      document.getElementById('locSelect').classList.remove('hidden');
+      document.getElementById('locSelect').value = '';
+    }
+  });
+
 });

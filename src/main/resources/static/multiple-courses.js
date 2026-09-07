@@ -3,9 +3,45 @@ document.addEventListener('DOMContentLoaded', function() {
   let selectedCourseId = null;
 
   // 3가지 가상 코스 데이터
-  const coursesData = [
-   
-  ];
+  const savedData = sessionStorage.getItem('recommendedCourses');
+  const rawCourses = savedData ? JSON.parse(savedData) : [];
+
+  function formatTimeRange(timeStr) {
+    if (!timeStr || timeStr === "미정") return "미정";
+
+    const parts = timeStr.split(" ~ ");
+    if (parts.length !== 2) return timeStr;
+
+    function convert(t) {
+      const [hourStr, minStr] = t.split(":");
+      let hour = parseInt(hourStr, 10);
+      const period = hour < 12 ? "오전" : "오후";
+      let displayHour = hour % 12;
+      if (displayHour === 0) displayHour = 12;
+      return `${period} ${displayHour}시 ${minStr}분`;
+    }
+
+    return `${convert(parts[0])} ~ ${convert(parts[1])}`;
+  }
+
+  function formatBudget(budgetStr) {
+    if (!budgetStr || budgetStr === "미정") return "미정";
+    const num = Number(budgetStr);
+    if (isNaN(num)) return budgetStr;
+    return num.toLocaleString('ko-KR');
+  }
+
+  const coursesData = rawCourses.map((course, idx) => ({
+    id: course.courseId,
+    name: `AI 추천 코스 ${course.courseId}`,
+    time: formatTimeRange(course.time),
+    budget: formatBudget(course.budget),
+    places: course.places.map(item => ({
+      emoji: "📍",
+      name: item.place_name,
+      category: item.reason
+    }))
+  }));
 
   const container = document.getElementById('coursesContainer');
   const actionContainer = document.getElementById('actionContainer');
