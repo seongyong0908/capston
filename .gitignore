@@ -40,3 +40,6 @@ src/main/resources/application.properties
 ### Python ###
 __pycache__/
 *.pyc
+
+.env
+
