@@ -66,45 +66,61 @@ if (typeof kakao !== 'undefined' && kakao.maps) {
       const btnBg = isFav ? "bg-pink-100 hover:bg-pink-200" : "hover:bg-pink-100";
 
       listHtml += `
-        <div class="relative mt-8">
-          ${index < currentCourse.length - 1 ? `<div class="absolute left-8 top-full w-1 h-8 bg-gradient-to-b from-purple-400 to-pink-400 z-0"></div>` : ''}
-          <div class="relative border-0 shadow-2xl bg-white/90 backdrop-blur-sm overflow-hidden cursor-pointer hover:shadow-xl transition-shadow rounded-xl" onclick="openPlaceDetail('${place.id}')">
-            <div class="absolute inset-0 bg-gradient-to-br ${place.color} opacity-5 pointer-events-none"></div>
-            
-            <div class="absolute -left-4 top-8 w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-2xl z-20 shadow-xl border-4 border-white">${index + 1}</div>
-            
-            <div class="p-6 pl-16 pb-4">
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-2">
-                    <span class="text-5xl">${place.emoji}</span>
-                    <div>
-                      <h3 class="text-2xl font-bold">${place.name}</h3>
-                      <span class="inline-block text-sm bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-3 py-1 rounded-full font-semibold mt-1">${place.category}</span>
-                    </div>
-                  </div>
-                  <p class="text-base text-gray-600 mt-2">${place.description}</p>
+        <div class="relative mt-4">
+          <!-- 카드 사이를 잇는 연결선 (마지막 카드에는 안 보임) -->
+          ${index < currentCourse.length - 1 ? `<div class="absolute left-9 top-14 bottom-[-32px] w-0.5 bg-gray-200 z-0"></div>` : ''}
+          
+          <!-- 슬림해진 개별 장소 카드 -->
+          <div class="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow z-10 cursor-pointer" onclick="openPlaceDetail('${place.id}')">
+            <div class="flex gap-4">
+              
+              <!-- 왼쪽: 순서 번호 & 아이콘 -->
+              <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md z-10">
+                  ${index + 1}
                 </div>
-                <button onclick="event.stopPropagation(); toggleFavorite('${place.id}')" class="shrink-0 h-12 w-12 rounded-md transition-all ${btnBg} flex items-center justify-center">
-                  <svg class="w-6 h-6 ${favClass}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                </button>
+                <span class="text-2xl mt-1">${place.emoji}</span>
               </div>
-            </div>
 
-            <div class="p-6 pl-16 space-y-4">
-              <div class="flex gap-3">
-                <button onclick="event.stopPropagation(); window.open('https://map.kakao.com/link/search/${encodeURIComponent(place.address)}') " class="flex-1 h-14 border-2 border-purple-300 hover:bg-purple-50 rounded-md font-semibold text-gray-800 flex items-center justify-center">
-                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>길찾기
-                </button>
-                <button onclick="event.stopPropagation(); location.href='tel:${place.phone}'" class="flex-1 h-14 border-2 border-pink-300 hover:bg-pink-50 rounded-md font-semibold text-gray-800 flex items-center justify-center">
-                  <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>전화하기
-                </button>
-              </div>
-              <div class="pt-4 border-t border-gray-200">
-                <button onclick="event.stopPropagation(); openReplaceModal('${place.id}')" class="w-full h-16 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-3">
-                  <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                  이 장소 변경하기
-                </button>
+              <!-- 오른쪽: 장소 정보 및 액션 -->
+              <div class="flex-1">
+                
+                <!-- 타이틀 & 상단 액션 (변경, 찜) -->
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-lg text-gray-900">${place.name}</h3>
+                    <span class="inline-block mt-1 px-2.5 py-0.5 bg-purple-50 text-purple-600 text-xs font-semibold rounded-full border border-purple-100">
+                      ${place.category}
+                    </span>
+                  </div>
+                  
+                  <!-- [핵심] 작아진 변경 버튼 & 하트 버튼 -->
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="event.stopPropagation(); openReplaceModal('${place.id}')" class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                      변경
+                    </button>
+                    <button onclick="event.stopPropagation(); toggleFavorite('${place.id}')" class="p-1.5 rounded-full transition-colors ${btnBg}">
+                      <svg class="w-5 h-5 ${favClass}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 설명 -->
+                <p class="text-sm text-gray-600 mt-2 line-clamp-2">${place.description}</p>
+
+                <!-- 하단: 길찾기 & 전화 버튼 (높이를 줄이고 얇게) -->
+                <div class="flex gap-2 mt-4">
+                  <button onclick="event.stopPropagation(); window.open('https://map.kakao.com/link/search/${encodeURIComponent(place.address)}') " class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                    길찾기
+                  </button>
+                  <button onclick="event.stopPropagation(); location.href='tel:${place.phone}'" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    전화
+                  </button>
+                </div>
+                
               </div>
             </div>
           </div>
