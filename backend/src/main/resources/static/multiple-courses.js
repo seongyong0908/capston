@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   let selectedCourseId = null;
+  let coursesData = []; // 데이터를 나중에 채우기 위해 let으로 변경
 
   // preferences.js의 categories 배열과 맞춘 카테고리별 아이콘
   const CATEGORY_ICONS = {
@@ -13,17 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     culture: "🎭"
   };
 
-  // preferences 화면에서 /api/get-course 호출 후 저장해둔 실제 AI 추천 결과를 사용
-  const savedData = sessionStorage.getItem('recommendedCourses');
-  const rawCourses = savedData ? JSON.parse(savedData) : [];
-
-  if (!rawCourses || rawCourses.length === 0) {
-      console.warn("⚠️ 세션스토리지에 추천 코스 데이터가 없습니다! 메인에서 다시 시도해주세요.");
-  }
-
   function formatTimeRange(timeStr) {
     if (!timeStr || timeStr === "미정") return "미정";
-
     const parts = timeStr.split(" ~ ");
     if (parts.length !== 2) return timeStr;
 
@@ -35,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (displayHour === 0) displayHour = 12;
       return `${period} ${displayHour}시 ${minStr}분`;
     }
-
     return `${convert(parts[0])} ~ ${convert(parts[1])}`;
   }
 
@@ -46,30 +37,33 @@ document.addEventListener('DOMContentLoaded', function() {
     return num.toLocaleString('ko-KR');
   }
 
- // 💡 파이썬이 주는 배열의 순서(인덱스)를 이용해 안전하게 번호와 데이터를 매칭합니다.
-  const coursesData = rawCourses.map((course, index) => {
-    const courseNum = index + 1; // 1번, 2번, 3번 코스 번호 자동 부여
-    return {
-      id: String(courseNum),
-      name: course.course_name || `AI 추천 코스 ${courseNum}`, // 파이썬이 보낸 course_name을 우선 사용!
-      time: formatTimeRange(course.time),
-      budget: formatBudget(course.budget),
-      places: (course.places || []).map(item => ({
-        emoji: item.noResult ? "❔" : (CATEGORY_ICONS[item.categoryId] || "📍"),
-        name: item.noResult ? "검색 결과 없음" : (item.place_name || item.name),
-        category: item.reason || item.category,
-        noResult: !!item.noResult
-      }))
-    };
-  });
+  // 💡 파이썬 데이터를 화면용 데이터로 예쁘게 가공하는 함수
+  function updateCoursesData(rawCourses) {
+    coursesData = rawCourses.map((course, index) => {
+      const courseNum = index + 1; // 1번, 2번, 3번 코스 번호 자동 부여
+      return {
+        id: String(courseNum),
+        name: course.course_name || `AI 추천 코스 ${courseNum}`,
+        time: formatTimeRange(course.time),
+        budget: formatBudget(course.budget),
+        places: (course.places || []).map(item => ({
+          emoji: item.noResult ? "❔" : (CATEGORY_ICONS[item.categoryId] || "📍"),
+          name: item.noResult ? "검색 결과 없음" : (item.place_name || item.name),
+          category: item.reason || item.category,
+          noResult: !!item.noResult
+        }))
+      };
+    });
+  }
 
   const container = document.getElementById('coursesContainer');
   const actionContainer = document.getElementById('actionContainer');
   const selectCourseText = document.getElementById('selectCourseText');
+  const loader = document.getElementById('aiLoadingOverlay'); // 💡 2단계에서 만든 로딩창 가져오기
 
   const renderCourses = () => {
     if (coursesData.length === 0) {
-      container.innerHTML = '<div class="p-5 text-center text-red-500">추천 결과를 찾을 수 없어요. preferences 화면에서 다시 시도해 주세요!</div>';
+      container.innerHTML = '<div class="p-5 text-center text-red-500">추천 결과를 찾을 수 없어요. 이전 화면에서 다시 시도해 주세요!</div>';
       return;
     }
     let html = '';
@@ -113,9 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // 전역 함수화
   window.selectCourse = (id) => {
     selectedCourseId = id;
-    renderCourses(); // 리렌더링하여 선택 효과 적용
+    renderCourses();
     
-    // 버튼 보이기
     const selectedCourseData = coursesData.find(c => c.id === id);
     selectCourseText.textContent = `${selectedCourseData.name} 선택하기`;
     actionContainer.classList.remove('hidden');
@@ -131,6 +124,68 @@ document.addEventListener('DOMContentLoaded', function() {
     window.location.href = '/results';
   });
 
-  // ⭐️ preferences 화면에서 이미 받아온 추천 결과를 바로 그립니다.
-  renderCourses();
+  // =========================================================================
+  // 🚀 핵심 비동기 로직: 화면이 열리자마자 세션을 확인하고 AI 결과를 요청합니다.
+  // =========================================================================
+  const pendingRequestRaw = sessionStorage.getItem('pendingAiRequest');
+
+  if (pendingRequestRaw) {
+    // 1. 1페이지에서 방금 넘어온 경우 (AI 요청을 해야 함)
+    const requestData = JSON.parse(pendingRequestRaw);
+
+    // 로딩창 띄우기
+    if (loader) {
+      loader.classList.remove('hidden');
+      loader.classList.add('flex');
+    }
+
+    console.log("👉 백엔드로 AI 코스 생성 요청 시작...");
+
+    fetch('/api/get-course', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("✅ AI 추천 결과 도착!", data);
+
+      // 로딩창 끄기
+      if (loader) {
+        loader.classList.add('hidden');
+        loader.classList.remove('flex');
+      }
+
+      // 다음을 위해 결과 저장
+      sessionStorage.setItem('recommendedCourses', JSON.stringify(data.courses));
+      sessionStorage.setItem('aiCourses', JSON.stringify(data.courses));
+      
+      // 일회용 임시 데이터 삭제
+      sessionStorage.removeItem('pendingAiRequest');
+
+      // 데이터 가공 및 화면 렌더링
+      updateCoursesData(data.courses);
+      renderCourses();
+    })
+    .catch(error => {
+      console.error("❌ 에러 발생:", error);
+      if (loader) {
+        loader.classList.add('hidden');
+        loader.classList.remove('flex');
+      }
+      alert("AI 코스 생성 중 오류가 발생했습니다.");
+      window.location.href = '/preferences'; // 오류 시 1페이지로 돌려보냄
+    });
+
+  } else {
+    // 2. 이미 결과가 저장되어 있는 경우 (새로고침을 했거나 다른 페이지에서 뒤로가기 한 경우)
+    const savedData = sessionStorage.getItem('recommendedCourses');
+    if (savedData) {
+      updateCoursesData(JSON.parse(savedData));
+      renderCourses();
+    } else {
+      console.warn("⚠️ 세션스토리지에 추천 코스 데이터가 없습니다!");
+      renderCourses(); // 에러 메시지가 뜨도록 빈 배열로 렌더링
+    }
+  }
 });

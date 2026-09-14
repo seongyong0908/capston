@@ -265,29 +265,16 @@ document.addEventListener('DOMContentLoaded', () => {
                   category: p.category 
               }))
           };
+          console.log("1. 요청 데이터를 세션에 저장하고 즉시 다음 페이지로 이동!", requestData);
 
-          console.log("1. 스프링 부트로 데이터 전송 시작!", requestData);
+          // 1. 2페이지에서 꺼내 쓸 수 있도록 AI에게 보낼 데이터를 세션에 임시 저장
+          sessionStorage.setItem('pendingAiRequest', JSON.stringify(requestData));
 
-          
+          // 2. 혹시 뒤로가기로 돌아왔을 때를 대비해 현재 화면의 입력 폼 내용 저장
+          saveDraft();
 
-          fetch('/api/get-course', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log("3. AI 추천 결과 도착:", data);
-            sessionStorage.setItem('recommendedCourses', JSON.stringify(data.courses));
-            sessionStorage.setItem('aiCourses', JSON.stringify(data.courses));
-            // multiple-courses 화면으로 넘어가기 전, 지금까지 입력한 내용을 임시 저장해서
-            // 뒤로가기로 돌아왔을 때 그대로 복원되게 함
-            saveDraft();
-            window.location.href = '/multiple-courses';
-          })
-          .catch(error => {
-            console.error("에러 발생:", error);
-          });
+          // 3. fetch로 기다리지 않고 즉시 2페이지로 이동!
+          window.location.href = '/multiple-courses';
         });
     }
 
