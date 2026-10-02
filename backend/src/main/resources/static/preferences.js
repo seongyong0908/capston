@@ -194,6 +194,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById("btnSubmit").addEventListener("click", function(e) {
     e.preventDefault();
 
+    const dateInputNode = document.getElementById('dateInput');
+    const noDateCheck = document.getElementById('noDateCheckbox');
+
+    let finalDate = dateInputNode ? dateInputNode.value : '';
+
+    if ((noDateCheck && noDateCheck.checked) || !finalDate) {
+        finalDate = '날짜 미정';
+    }
+    localStorage.setItem('savedCourseDate', finalDate);
+
+    const startTime = document.getElementById('startTime').value; 
+    const endTime = document.getElementById('endTime').value;     
+    localStorage.setItem('savedStartTime', startTime);
+    localStorage.setItem('savedEndTime', endTime);
+
     const locSelect = document.getElementById('locSelect');
     const locCustom = document.getElementById('locCustom');
 
@@ -206,9 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const dateValue = document.getElementById('dateInput').value;
-    if (!dateValue) {
-      alert("날짜를 선택해주세요.");
-      return;
+    const isNoDateChecked = document.getElementById('noDateCheckbox') && document.getElementById('noDateCheckbox').checked;
+
+    // 💡 날짜도 안 고르고, 미정 체크도 안 했을 때만 경고창 띄우기
+    if (!dateValue && !isNoDateChecked) {
+        alert("날짜를 선택하거나 '미정'을 체크해주세요.");
+        return;
     }
 
     const peopleSelect = document.getElementById('peopleSelect');
@@ -397,4 +415,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  window.toggleDateInput = function() {
+    const dateInput = document.getElementById('dateInput');
+    const noDateCheck = document.getElementById('noDateCheckbox');
+    
+    if (noDateCheck.checked) {
+        dateInput.disabled = true;           // 달력 잠금
+        dateInput.value = '';                // 값 비우기
+        dateInput.classList.add('bg-gray-100', 'text-gray-400'); // 회색으로 변경
+    } else {
+        dateInput.disabled = false;          // 달력 다시 열기
+        dateInput.classList.remove('bg-gray-100', 'text-gray-400');
+    }
+};
 });

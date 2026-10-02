@@ -100,21 +100,49 @@ async def get_recommendation(request: DateRequest):
     """
 
     try:
-        # 작성자님이 지정하신 3.6-flash 버전 그대로 사용
-        # temperature를 0.8로 설정하여 매번 똑같은 코스가 나오는 것을 방지 (창의력 상승)
-        response = client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=user_prompt,
-            config={"temperature": 0.8}
-        )
-        
-        # 3. AI가 준 답변에서 불필요한 찌꺼기 제거 후 JSON 변환
-        ai_text = response.text.strip()
-        ai_text = re.sub(r'^```json\s*', '', ai_text, flags=re.MULTILINE)
-        ai_text = re.sub(r'^```\s*', '', ai_text, flags=re.MULTILINE)
-        
-        course_data = json.loads(ai_text)
-        print("✅ AI가 완벽한 JSON으로 대답했습니다!")
+    #         # 작성자님이 지정하신 3.6-flash 버전 그대로 사용
+    #         # temperature를 0.8로 설정하여 매번 똑같은 코스가 나오는 것을 방지 (창의력 상승)
+    #         response = client.models.generate_content(
+    #             model='gemini-3.6-flash',
+    #             contents=user_prompt,
+    #             config={"temperature": 0.8}
+    #         )
+            
+    #         # 3. AI가 준 답변에서 불필요한 찌꺼기 제거 후 JSON 변환
+    #         ai_text = response.text.strip()
+    #         ai_text = re.sub(r'^```json\s*', '', ai_text, flags=re.MULTILINE)
+    #         ai_text = re.sub(r'^```\s*', '', ai_text, flags=re.MULTILINE)
+            
+    #         course_data = json.loads(ai_text)
+    #         print("✅ AI가 완벽한 JSON으로 대답했습니다!")
+
+        print("✅ 구글 서버 과부하로 인해 임시 가짜(Mock) 데이터로 응답합니다!")
+        course_data = [
+            {
+                "course_name": "코스 1: 낭만적인 남산 야경 데이트",
+                "places": [
+                    {"step": 1, "place_name": "남산서울타워", "category": "관광명소", "reason": "서울의 아름다운 야경을 한눈에 볼 수 있습니다.", "address": "서울 용산구 남산공원길 105"},
+                    {"step": 2, "place_name": "명동교자 본점", "category": "식당", "reason": "따뜻하고 깊은 맛의 칼국수로 든든한 저녁을 즐기세요.", "address": "서울 중구 명동10길 29"},
+                    {"step": 3, "place_name": "블루보틀 명동 카페", "category": "카페", "reason": "모던한 분위기에서 깔끔한 드립 커피로 마무리하기 좋습니다.", "address": "서울 중구 명동길 14"}
+                ]
+            },
+            {
+                "course_name": "코스 2: 힙한 홍대 문화 데이트",
+                "places": [
+                    {"step": 1, "place_name": "카카오프렌즈 홍대플래그십스토어", "category": "쇼핑", "reason": "귀여운 캐릭터 상품을 구경하며 즐거운 시간을 보낼 수 있습니다.", "address": "서울 마포구 양화로 162"},
+                    {"step": 2, "place_name": "칸다소바 홍대점", "category": "식당", "reason": "진한 풍미의 마제소바가 일품인 곳입니다.", "address": "서울 마포구 와우산로51길 7"},
+                    {"step": 3, "place_name": "테일러커피 서교점", "category": "카페", "reason": "부드러운 아인슈페너와 함께 대화를 나누기 좋은 카페입니다.", "address": "서울 마포구 와우산로33길 46"}
+                ]
+            },
+            {
+                "course_name": "코스 3: 고즈넉한 북촌 한옥 산책",
+                "places": [
+                    {"step": 1, "place_name": "경복궁", "category": "관광명소", "reason": "전통의 아름다움을 느끼며 여유롭게 산책하기 좋습니다.", "address": "서울 종로구 사직로 161"},
+                    {"step": 2, "place_name": "황생가칼국수", "category": "식당", "reason": "미슐랭 가이드에 선정된 깔끔하고 깊은 맛의 칼국수 맛집입니다.", "address": "서울 종로구 북촌로5길 78"},
+                    {"step": 3, "place_name": "어니언 안국", "category": "카페", "reason": "한옥을 개조한 독특한 분위기에서 맛있는 베이커리를 즐길 수 있습니다.", "address": "서울 종로구 계동길 5"}
+                ]
+            }
+        ]
 
         # ============== 👇 여기서부터 터미널 출력용 코드 추가 👇 ==============
         print("\n" + "="*50)

@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
           emoji: item.noResult ? "❔" : (CATEGORY_ICONS[item.categoryId] || "📍"),
           name: item.noResult ? "검색 결과 없음" : (item.place_name || item.name),
           category: item.reason || item.category,
+          address: item.address,
           noResult: !!item.noResult
         }))
       };
@@ -120,8 +121,28 @@ document.addEventListener('DOMContentLoaded', function() {
     window.location.href = '/preferences';
   });
 
+  // 🚨 [수정할 부분] '선택하기' 버튼을 눌렀을 때의 동작
   document.getElementById('btnSelectCourse').addEventListener('click', () => {
-    window.location.href = '/results';
+    
+    // 1. 방금 사용자가 선택한 코스(id로 찾기)의 모든 정보를 가져옵니다.
+    const mySelectedCourse = coursesData.find(course => course.id === selectedCourseId);
+    
+    if (mySelectedCourse) {
+        // 2. 3페이지(result.js)가 읽을 수 있도록 세션에 저장합니다.
+        // 이때 원래 파이썬에서 왔던 형태랑 최대한 비슷하게 이름을 맞춰서 저장해 줍니다.
+        const dataForNextPage = {
+            course_name: mySelectedCourse.name,
+            totalTime: mySelectedCourse.time,
+            totalBudget: mySelectedCourse.budget,
+            places: mySelectedCourse.places
+        };
+        sessionStorage.setItem('finalSelectedCourse', JSON.stringify(dataForNextPage));
+        
+        // 3. 당당하게 3페이지로 넘어갑니다!
+        window.location.href = '/result'; 
+    } else {
+        alert("코스를 먼저 선택해 주세요!");
+    }
   });
 
   // =========================================================================
@@ -188,4 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
       renderCourses(); // 에러 메시지가 뜨도록 빈 배열로 렌더링
     }
   }
+
+    document.getElementById('btnSelectCourse').addEventListener('click', function() {
+  
+  window.location.href = '/result'; 
+});
 });

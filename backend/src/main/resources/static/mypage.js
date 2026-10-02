@@ -84,36 +84,6 @@ const renderRooms = async () => {
 };
   
 
-  const renderSavedCourses = () => {
-    const container = document.getElementById('coursesContainer');
-    if (savedCoursesData.length === 0) {
-      container.innerHTML = `<div class="text-center py-12 text-gray-500">코스가 없습니다.</div>`;
-      return;
-    }
-    
-    let html = '';
-    savedCoursesData.forEach(course => {
-      let placesHtml = course.places.slice(0,4).map(p => `<span class="text-xs bg-gray-100 px-2 py-1 rounded-full">${p}</span>`).join('');
-      if(course.places.length > 4) placesHtml += `<span class="text-xs bg-gray-100 px-2 py-1 rounded-full">+${course.places.length - 4}</span>`;
-
-      html += `
-        <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-purple-500 transition-all cursor-pointer" onclick="openCourseDetail('${course.id}')">
-          <div class="flex items-start justify-between mb-2">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <h3 class="text-lg font-bold">${course.title}</h3>
-                <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">${course.location}</span>
-              </div>
-              <p class="text-sm text-gray-600 mb-2">${course.date}</p>
-              <div class="flex flex-wrap gap-1">${placesHtml}</div>
-            </div>
-            <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-          </div>
-        </div>`;
-    });
-    container.innerHTML = html;
-  };
-
   // 전역 함수화 (HTML onclick 연동용)
   window.setActiveRoom = (id) => {
     roomsData.forEach(r => r.isActive = (r.id === id));
@@ -583,5 +553,248 @@ window.rejectMember = async (roomId, userId) => {
             openMemberManageModal(roomId); // 모달창 목록 새로고침
         }
     } catch (error) { console.error(error); }
+};
+// 💡 1. 화면에 코스 카드를 그려주는 메인 함수
+function renderSavedCourses() {
+    const container = document.getElementById('coursesContainer');
+    if (!container) return;
+
+    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+
+    if (savedCourses.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-400 py-10 font-medium">
+                아직 찜한 코스가 없어요.<br>마음에 드는 데이트 코스를 보관해 보세요!
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    savedCourses.forEach(course => {
+        const placeCount = course.places ? course.places.length : 0;
+        
+        // 💡 [변경] 방 종류별 색상 완벽 적용 (기본은 뱃지 없는 하얀색)
+        let cardClass = "border-gray-200 hover:border-gray-400 bg-white"; 
+        let badgeHtml = ""; 
+
+        if (course.room === 'couple') {
+            // ❤️ 연인 방: 빨강
+            cardClass = "border-red-200 hover:border-red-400 bg-red-50";
+            badgeHtml = `<div class="inline-block px-2.5 py-1 bg-red-100 text-red-600 text-xs font-extrabold rounded-md mb-2">❤️ 연인 방</div>`;
+        } else if (course.room === 'friend') {
+            // ⭐ 친구 방: 노랑
+            cardClass = "border-yellow-200 hover:border-yellow-400 bg-yellow-50";
+            badgeHtml = `<div class="inline-block px-2.5 py-1 bg-yellow-100 text-yellow-700 text-xs font-extrabold rounded-md mb-2">⭐ 친구 방</div>`;
+        } else if (course.room === 'family') {
+            // 🍀 가족 방: 초록
+            cardClass = "border-green-200 hover:border-green-400 bg-green-50";
+            badgeHtml = `<div class="inline-block px-2.5 py-1 bg-green-100 text-green-600 text-xs font-extrabold rounded-md mb-2">🍀 가족 방</div>`;
+        }
+
+        const courseTitle = `${course.date} 맞춤 코스`;
+
+        // 💡 [개선] 장소 데이터 제대로 보여주기 (ex: 스타벅스, 남산타워 외 1곳)
+        let placeNames = '장소 정보 없음';
+        if (placeCount > 0) {
+            // 장소 이름들만 뽑아오기 (데이터 구조에 따라 place_name 또는 name)
+            const names = course.places.map(p => p.place_name || p.name || '이름 모를 장소');
+            if (names.length > 2) {
+                placeNames = `${names[0]}, ${names[1]} 외 ${names.length - 2}곳`;
+            } else {
+                placeNames = names.join(', ');
+            }
+        }
+
+        html += `
+        <div class="p-4 rounded-xl border-2 ${cardClass} shadow-sm mb-4 transition-all">
+            ${badgeHtml}
+            <h3 class="font-bold text-gray-800 text-lg cursor-pointer" onclick="openCourseDetail('${course.id}')">
+                ${courseTitle}
+            </h3>
+            <p class="text-sm text-gray-600 mt-1 font-medium">${placeNames}</p>
+            <p class="text-xs text-gray-400 mt-0.5">총 ${placeCount}곳 · ${course.time}</p>
+            
+            <div class="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+                <button onclick="deleteCourse('${course.id}')" class="px-3 py-2 bg-white/60 hover:bg-red-50 text-red-500 text-sm font-bold rounded-lg transition-colors">
+                    삭제
+                </button>
+                <button onclick="openScheduleModal('${course.id}')" class="flex-1 px-3 py-2 bg-white/60 hover:bg-white text-gray-800 text-sm font-bold rounded-lg shadow-sm transition-colors text-center">
+                    🗓️ 내 일정에 추가하기
+                </button>
+            </div>
+        </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// 💡 2. 삭제 기능 (해당 ID를 가진 코스만 빼고 다시 저장)
+window.deleteCourse = function(courseId) {
+    if (!confirm('이 코스를 보관함에서 삭제하시겠습니까?')) return;
+    
+    let savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+    savedCourses = savedCourses.filter(course => course.id !== courseId); // 해당 ID 삭제
+    localStorage.setItem('mySavedCourses', JSON.stringify(savedCourses)); // 덮어쓰기
+    
+    renderSavedCourses(); // 화면 다시 그리기
+};
+
+// 💡 3. 일정 추가 기능 (우선 알림창 띄우고, 추후 진짜 캘린더 데이터에 넣을 준비)
+window.addCourseToSchedule = function(courseId) {
+    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+    const targetCourse = savedCourses.find(c => c.id === courseId);
+    
+    if (targetCourse) {
+        // 나중에 진짜 캘린더 DB(로컬스토리지 등)에 추가하는 코드를 여기에 넣을 겁니다!
+        alert(`[${targetCourse.date}] 일정이 캘린더에 추가되었습니다! 🎉`);
+    }
+};
+
+// 💡 4. 페이지 켜지면 무조건 한 번 실행!
+document.addEventListener('DOMContentLoaded', () => {
+    renderSavedCourses();
+});
+
+// 💡 모달 닫기 공통 함수
+window.closeModal = function(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+};
+
+// 💡 상세 팝업 열기 함수 (디자인 업그레이드 & 카카오맵 연동)
+window.openCourseDetail = function(courseId) {
+    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+    const course = savedCourses.find(c => c.id === courseId);
+    if (!course) return;
+
+    // 제목에 날짜와 코스 시간 추가
+    document.getElementById('detailTitle').innerHTML = `
+        <div class="text-sm text-purple-600 font-bold mb-1">${course.date}</div>
+        <div class="text-xl font-extrabold text-gray-800">맞춤 코스 상세</div>
+        <div class="text-xs text-gray-500 mt-1">총 예상 시간: ${course.time}</div>
+    `;
+    
+    let contentHtml = '';
+    if (course.places && course.places.length > 0) {
+        // 💡 타임라인 스타일의 뼈대 시작
+        contentHtml += '<div class="relative border-l-2 border-purple-200 ml-3 mt-4 space-y-6 pb-4">';
+        
+        course.places.forEach((place, index) => {
+            const placeName = place.place_name || place.name || '이름 모를 장소';
+            // 카카오맵 검색 링크 (이름으로 바로 검색되게)
+            const mapLink = `https://map.kakao.com/?q=${encodeURIComponent(placeName)}`;
+            
+            contentHtml += `
+                <div class="relative pl-6">
+                    <!-- 보라색 동그라미 포인트 -->
+                    <div class="absolute -left-[9px] top-1 w-4 h-4 bg-purple-500 rounded-full border-4 border-white shadow-sm"></div>
+                    
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <span class="text-xs font-bold text-purple-500 mb-1 block">${index + 1}번째 장소</span>
+                                <h3 class="font-bold text-gray-800 text-base">${placeName}</h3>
+                            </div>
+                            <a href="${mapLink}" target="_blank" class="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                📍 지도보기
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        contentHtml += '</div>';
+    } else {
+        contentHtml = '<p class="text-gray-500 text-sm text-center py-10">저장된 장소 정보가 없습니다.</p>';
+    }
+
+    document.getElementById('detailContent').innerHTML = contentHtml;
+    document.getElementById('detailModal').classList.remove('hidden');
+};
+
+let selectedCourseIdForSchedule = null;
+let targetRoomForSchedule = 'none';
+
+// 💡 캘린더 팝업 열기
+window.openScheduleModal = function(courseId) {
+    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+    const course = savedCourses.find(c => c.id === courseId);
+    if (!course) return;
+
+    selectedCourseIdForSchedule = courseId;
+    targetRoomForSchedule = course.room || 'none'; 
+
+   // 💡 제목 칸을 아예 비워둡니다 (placeholder 텍스트만 보임)
+    document.getElementById('scheduleTitleInput').value = '';
+
+    // 오늘 날짜 세팅
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('scheduleDateInput').value = today;
+
+    // 방 배정 UI 처리 (이전과 동일)
+    const roomSelectArea = document.getElementById('roomSelectArea');
+    const autoRoomBadge = document.getElementById('autoRoomBadge');
+
+    if (targetRoomForSchedule === 'none') {
+        roomSelectArea.classList.remove('hidden');
+        autoRoomBadge.classList.add('hidden');
+    } else {
+        roomSelectArea.classList.add('hidden');
+        autoRoomBadge.classList.remove('hidden');
+        
+        let badgeHtml = '';
+        if(targetRoomForSchedule === 'couple') badgeHtml = '<span class="inline-block px-2.5 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-md">❤️ 연인 방 캘린더에 추가됩니다</span>';
+        else if(targetRoomForSchedule === 'friend') badgeHtml = '<span class="inline-block px-2.5 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-md">⭐ 친구 방 캘린더에 추가됩니다</span>';
+        else if(targetRoomForSchedule === 'family') badgeHtml = '<span class="inline-block px-2.5 py-1 bg-green-100 text-green-600 text-xs font-bold rounded-md">🍀 가족 방 캘린더에 추가됩니다</span>';
+        autoRoomBadge.innerHTML = badgeHtml;
+    }
+    
+    document.getElementById('scheduleModal').classList.remove('hidden');
+};
+
+// 💡 일정 최종 저장
+window.confirmSchedule = function() {
+    const selectedDate = document.getElementById('scheduleDateInput').value;
+    const finalTitle = document.getElementById('scheduleTitleInput').value || '제목 없는 일정'; // 💡 제목 가져오기
+    
+    if (!selectedDate) {
+        alert("날짜를 선택해 주세요!");
+        return;
+    }
+
+    let finalRoom = targetRoomForSchedule;
+    if (finalRoom === 'none') {
+        finalRoom = document.getElementById('scheduleRoomSelect').value;
+    }
+
+    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
+    const courseToSchedule = savedCourses.find(c => c.id === selectedCourseIdForSchedule);
+    if (!courseToSchedule) return;
+
+    // 💡 캘린더 이벤트에 title 추가해서 저장!
+    const newScheduleEvent = {
+        id: `event-${Date.now()}`,
+        courseId: courseToSchedule.id,
+        title: finalTitle, // 드디어 캘린더 제목이 들어갑니다!
+        date: selectedDate, 
+        time: courseToSchedule.time,
+        room: finalRoom,
+        places: courseToSchedule.places
+    };
+
+    const calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+    calendarEvents.push(newScheduleEvent);
+    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+
+    // 기본 방(none)이었으면 색칠해주기
+    if (courseToSchedule.room === 'none') {
+        courseToSchedule.room = finalRoom;
+        localStorage.setItem('mySavedCourses', JSON.stringify(savedCourses));
+        if (typeof renderSavedCourses === 'function') renderSavedCourses(); 
+    }
+
+    alert(`[${finalTitle}] 일정이 캘린더에 성공적으로 저장되었습니다! 🗓️`);
+    closeModal('scheduleModal');
 };
 });

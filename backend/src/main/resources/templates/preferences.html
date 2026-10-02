@@ -57,10 +57,15 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1">
-            <label class="text-xs font-semibold text-gray-700">날짜</label>
-            <input type="date" id="dateInput" class="w-full h-10 px-3 text-sm border-2 rounded-lg focus:outline-none focus:border-purple-500">
+            <div class="flex justify-between items-center px-1">
+              <label class="text-xs font-semibold text-gray-700">날짜</label>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="noDateCheckbox" onchange="toggleDateInput()" class="w-3.5 h-3.5 text-purple-500 rounded focus:ring-purple-500">
+                <span class="text-xs font-bold text-gray-500 hover:text-purple-600 transition-colors">미정</span>
+              </label>
+            </div>
+            <input type="date" id="dateInput" class="w-full h-10 px-3 text-sm border-2 rounded-lg focus:outline-none focus:border-purple-500 transition-colors">
           </div>
-
           <div class="space-y-1">
             <label class="text-xs font-semibold text-gray-700">인원수</label>
             <select id="peopleSelect" class="w-full h-10 px-3 text-sm border-2 rounded-lg focus:outline-none focus:border-purple-500">

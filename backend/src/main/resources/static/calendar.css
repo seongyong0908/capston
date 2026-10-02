@@ -24,3 +24,12 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* 날짜 아래에 찍힐 보라색 마커 */
+.schedule-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #9d4edd; /* 버튼과 어울리는 보라색 */
+    border-radius: 50%;
+    margin: 4px auto 0 auto; /* 중앙 정렬 및 여백 */
+}
