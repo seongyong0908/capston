@@ -44,16 +44,24 @@ public class PlaceCsvLoader implements CommandLineRunner {
                     isFirstLine = false;
                     continue;
                 }
-                if (tokens.length < 9) continue;
+                if (tokens.length < 12) continue;
 
                 try {
                     Place place = new Place();
                     place.setPlaceName(tokens[1].trim());
-                    place.setAddress(tokens[2].trim());
-                    place.setLatitude(new BigDecimal(tokens[4].trim()));
-                    place.setLongitude(new BigDecimal(tokens[5].trim()));
-                    place.setCategory(tokens[6].trim());
-                    place.setDescription(tokens[8].trim());
+                    place.setCategory(tokens[2].trim());
+                    place.setSubcategory(tokens[3].trim());
+                    place.setAddress(tokens[4].trim());
+                    place.setLatitude(new BigDecimal(tokens[5].trim()));
+                    place.setLongitude(new BigDecimal(tokens[6].trim()));
+                    place.setRegion(tokens[7].trim());
+                    place.setPhone(tokens[8].trim());
+                    place.setOpeningHours(tokens[9].trim());
+                    place.setTags(tokens[10].trim());
+                    place.setDescription(tokens[11].trim());
+                    if (tokens.length > 12 && !tokens[12].isBlank()) {
+                        place.setRating(new BigDecimal(tokens[12].trim()));
+                    }
 
                     places.add(place);
                 } catch (Exception e) {
