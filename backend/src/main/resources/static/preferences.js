@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ---- 추천받기를 눌러 multiple-courses 화면으로 넘어갔다가 뒤로가기로 돌아왔을 때도
-  // 입력했던 내용(지역/날짜/인원/시간/예산/코스순서/분위기/AI메시지)이 그대로 남아있도록
+  // 입력했던 내용(지역/날짜/인원/시간/코스순서/분위기/AI메시지)이 그대로 남아있도록
   // sessionStorage에 임시 저장해두고 복원하는 로직 ----
   const DRAFT_KEY = 'preferencesDraft';
 
@@ -114,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
       peopleCountCustomVisible: !peopleCountCustom.classList.contains('hidden'),
       startTime: document.getElementById('startTime').value,
       endTime: document.getElementById('endTime').value,
-      budgetInput: document.getElementById('budgetInput').value,
       aiMessage: document.getElementById('aiMessage').value
     };
 
@@ -162,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (draft.startTime) document.getElementById('startTime').value = draft.startTime;
       if (draft.endTime) document.getElementById('endTime').value = draft.endTime;
-      if (draft.budgetInput) document.getElementById('budgetInput').value = draft.budgetInput;
       if (draft.aiMessage) document.getElementById('aiMessage').value = draft.aiMessage;
     } catch (e) {
       console.error('임시 저장된 입력 내용을 불러오지 못했습니다:', e);
@@ -246,7 +244,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function proceedWithCoords(lat, lng) {
-      fetch(`/api/place/nearby?lat=${lat}&lng=${lng}&radius=3`)
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        radius: '3',
+        courseSequence: preferences.courseSequence.join(','),
+        region: selectedRegion
+      });
+      fetch(`/api/place/nearby?${params}`)
         .then(response => response.json())
         .then(nearbyPlaces => {
           if (nearbyPlaces.length === 0) {
@@ -257,17 +262,17 @@ document.addEventListener('DOMContentLoaded', () => {
           const startTime = document.getElementById('startTime').value;
           const endTime = document.getElementById('endTime').value;
 
-          const budgetRaw = document.getElementById('budgetInput').value;
-          const budget = budgetRaw ? budgetRaw.replace(/,/g, '') : '';
-
           const aiMessage = document.getElementById('aiMessage').value;
 
          const requestData = {
             date: dateValue,
+            region: selectedRegion,
+            login_id: localStorage.getItem('loginId'),
+            roomId: localStorage.getItem('activeRoomId'),
+            roomType: localStorage.getItem('activeRoomType'),
             startTime: startTime,
             endTime: endTime,
             peopleCount: peopleCount,
-            budget: budget,
             courseSequence: preferences.courseSequence,
             mood: preferences.mood,
             extraMessage: aiMessage,
@@ -275,12 +280,17 @@ document.addEventListener('DOMContentLoaded', () => {
             lng: lng,
             // 💡 이 부분을 이렇게 섞고 40개 뽑는 코드로 교체하세요!
             places: nearbyPlaces
-              .sort(() => Math.random() - 0.5) // 1. 무작위로 섞기
-              .slice(0, 40)                    // 2. 넉넉하게 40개 자르기
               .map(p => ({ 
                   id: p.id, 
                   name: p.placeName, 
-                  category: p.category 
+                  category: p.category,
+                  subcategory: p.subcategory,
+                  tags: p.tags,
+                  address: p.address,
+                  region: p.region,
+                  phone: p.phone,
+                  latitude: p.latitude,
+                  longitude: p.longitude
               }))
           };
           console.log("1. 요청 데이터를 세션에 저장하고 즉시 다음 페이지로 이동!", requestData);
@@ -383,16 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
       this.classList.add('hidden');
       document.getElementById('peopleSelect').classList.remove('hidden');
       document.getElementById('peopleSelect').value = '2';
-    }
-  });
-
-  //예산
-  document.getElementById('budgetInput').addEventListener('input', function() {
-    let numericValue = this.value.replace(/[^0-9]/g, '');
-    if (numericValue) {
-      this.value = Number(numericValue).toLocaleString('ko-KR');
-    } else {
-      this.value = '';
     }
   });
 

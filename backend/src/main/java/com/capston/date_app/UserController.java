@@ -18,6 +18,17 @@ public class UserController {
     private final UserRepository userRepository;
     private final PreferenceRepository preferenceRepository;
 
+    public record UserProfileResponse(
+            String loginId,
+            String name,
+            String email,
+            String phone,
+            String likeVibe,
+            String hateAct,
+            String foodLimit,
+            String foodMemo) {
+    }
+
     @PostMapping("/signup")
     public String signup(@RequestBody Map<String, String> data) {
         System.out.println("🔥 회원가입 데이터 도착: " + data);
@@ -77,11 +88,21 @@ public class UserController {
     }
 
     @GetMapping("/api/user")
-    public User getUserInfo(@RequestParam("login_id") String loginId) {
+    public UserProfileResponse getUserInfo(@RequestParam("login_id") String loginId) {
         System.out.println("🔥 마이페이지 정보 요청 들어온 아이디: " + loginId);
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-        return user;
+        Preference preference = preferenceRepository.findByUser(user);
+
+        return new UserProfileResponse(
+                user.getLoginId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                preference == null ? null : preference.getLikeVibe(),
+                preference == null ? null : preference.getHateAct(),
+                preference == null ? null : preference.getFoodLimit(),
+                preference == null ? null : preference.getFoodMemo());
     }
 
     @PutMapping("/api/user")

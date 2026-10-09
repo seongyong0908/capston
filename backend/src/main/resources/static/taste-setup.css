@@ -13,3 +13,123 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+header > div {
+  min-height: 4.5rem;
+}
+
+header h1 {
+  font-size: 1.5rem;
+}
+
+header p {
+  font-size: 0.95rem;
+}
+
+header #clearAllBtn {
+  font-size: 0.95rem;
+}
+
+main {
+  width: min(100% - 2rem, 72rem);
+  max-width: 72rem !important;
+}
+
+main > div:not(.flex) {
+  padding: clamp(1rem, 2.2vw, 1.5rem);
+  border-radius: 1rem;
+}
+
+main h2 {
+  font-size: 1.35rem;
+}
+
+main .text-sm {
+  font-size: 1rem;
+}
+
+main .text-xs {
+  font-size: 0.9rem;
+}
+
+#moodGrid,
+#activityGrid,
+#dietGrid {
+  gap: 1rem;
+}
+
+#moodGrid .taste-btn,
+#activityGrid .taste-btn,
+#dietGrid .taste-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 5.75rem;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.875rem;
+  font-size: 1rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.taste-btn > div:first-child {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0 !important;
+  font-size: 2.75rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.taste-btn > div:last-child {
+  flex: 0 1 auto;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+}
+
+#customDiet {
+  min-height: 7rem;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+main > .flex button {
+  min-height: 3.75rem;
+  font-size: 1.125rem;
+}
+
+@media (max-width: 700px) {
+  main {
+    width: min(100% - 1.25rem, 72rem);
+  }
+
+  main > div:not(.flex) {
+    padding: 1rem;
+  }
+
+  #moodGrid,
+  #dietGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #activityGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #moodGrid .taste-btn,
+  #activityGrid .taste-btn,
+  #dietGrid .taste-btn {
+    gap: 0.5rem;
+    min-height: 5.25rem;
+    padding: 0.625rem !important;
+  }
+
+  .taste-btn > div:first-child {
+    font-size: 2.25rem;
+  }
+}

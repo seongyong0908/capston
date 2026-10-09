@@ -11,23 +11,24 @@ document.addEventListener('DOMContentLoaded', function() {
   if (savedCourseData) {
       const parsedData = JSON.parse(savedCourseData);
       
-      // 만약 파이썬에서 제목과 예산을 함께 넘겨줬다면 가져옵니다.
+      // 추천 코스 제목을 표시용으로 가져옵니다.
       if(parsedData.title) courseTitle = parsedData.title;
-      if(parsedData.totalBudget) courseBudget = parsedData.totalBudget;
+      else if(parsedData.course_name) courseTitle = parsedData.course_name;
       
       // places 배열(남산타워, 명동교자 등)을 currentCourse에 매핑합니다.
       // (기존 프론트엔드 코드 형식에 맞게 속성 이름을 살짝 바꿔줍니다)
       currentCourse = parsedData.places.map((place, index) => ({
           id: `p${index + 1}`,
           name: place.name || place.place_name, 
+          placeId: place.placeId || place.id,
           category: place.category,
+          subcategory: place.subcategory || '',
           emoji: '📍', // AI 데이터에는 이모지가 없으므로 기본 핀 이모지로 통일
           description: place.reason || 'AI 추천 장소입니다.',
-          rating: 4.5, // AI 데이터에는 별점이 없으므로 임시 별점
-          reviewCount: Math.floor(Math.random() * 500) + 50, // 가짜 리뷰 수
-          estimatedTime: '2시간', // 시간 데이터가 없다면 임시 시간
-          address: place.address || '주소 정보 없음',
-          phone: '',
+          address: place.address || '',
+          lat: place.lat,
+          lng: place.lng,
+          phone: place.phone || '',
           color: 'from-pink-400 to-rose-400'
       }));
   } else {
@@ -38,7 +39,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 💡(참고) 장소 '교체' 기능을 위한 allPlacesPool은 일단 비워두거나,
   // currentCourse로 덮어써서 에러를 방지합니다. (나중에 AI에게 다시 물어보는 기능으로 발전시킬 수 있습니다)
-  const allPlacesPool = [...currentCourse];
+  let allPlacesPool = [...currentCourse];
+  const selectedCourseContext = savedCourseData ? JSON.parse(savedCourseData) : {};
+  const selectedRegion = selectedCourseContext.region || '';
+  const mapCenter = selectedCourseContext;
+
+  window.openKakaoDirections = (placeId) => {
+    const place = currentCourse.find(item => item.id === placeId);
+    if (!place) return;
+
+    const target = Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lng))
+      ? `https://map.kakao.com/link/to/${encodeURIComponent(place.name)},${place.lat},${place.lng}`
+      : `https://map.kakao.com/link/search/${encodeURIComponent(`${place.name} ${place.address}`.trim())}`;
+    window.open(target, '_blank', 'noopener,noreferrer');
+  };
 
   // -- DOM 엘리먼트 --
   const courseListContainer = document.getElementById('courseListContainer');
@@ -58,12 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
 
-    // 2. 비용 계산 (더미 1인당 3만원 기준 대략 계산)
-    const budget = currentCourse.length * 30000;
-
     document.getElementById('summaryTime').textContent = `총 ${hours}시간 ${mins}분`;
     document.getElementById('summaryPlaces').textContent = `${currentCourse.length}개 장소`;
-    document.getElementById('summaryBudget').textContent = `2명 약 ${budget.toLocaleString()}원`;
   };
 
   // -- 함수: 코스 목록 렌더링 --
@@ -86,16 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
             let processedCount = 0; 
 
             currentCourse.forEach((place, index) => {
-                // 주소가 없는 장소는 건너뜁니다
-                if (!place.address) {
-                    processedCount++;
-                    return; 
-                }
-
-                // 각 장소의 주소로 좌표를 검색합니다
-                geocoder.addressSearch(place.address, function(result, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                        const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                const finishPlace = (coords) => {
+                    if (coords) {
                         
                         // 🌟 [개선 1] 파란색 핀 대신 '핑크색 동그라미 숫자(1, 2, 3) 마커' 생성
                         const customMarkerHtml = `
@@ -116,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         linePath[index] = coords;
                         bounds.extend(coords);
                     }
-                    
+
                     processedCount++;
 
                     // 🌟 [개선 2] 모든 주소 검색이 끝났을 때 점선 긋기
@@ -138,10 +140,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         // 마커들이 모두 한눈에 보이도록 지도 줌 레벨 자동 조절
                         if (validPath.length > 0) {
-                            map.setBounds(bounds);
+                            map.setBounds(bounds, 48, 48, 48, 48);
                         }
                     }
-                });
+                };
+
+                if (Number.isFinite(place.lat) && Number.isFinite(place.lng)) {
+                    finishPlace(new kakao.maps.LatLng(place.lat, place.lng));
+                } else if (place.address) {
+                    geocoder.addressSearch(place.address, function(result, status) {
+                        const coords = status === kakao.maps.services.Status.OK
+                            ? new kakao.maps.LatLng(result[0].y, result[0].x)
+                            : null;
+                        finishPlace(coords);
+                    });
+                } else {
+                    finishPlace(null);
+                }
             });
         });
 }
@@ -197,16 +212,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- 설명 -->
                 <p class="text-sm text-gray-600 mt-2 line-clamp-2">${place.description}</p>
 
-                <!-- 하단: 길찾기 & 전화 버튼 (높이를 줄이고 얇게) -->
                 <div class="flex gap-2 mt-4">
-                  <button onclick="event.stopPropagation(); window.open('https://map.kakao.com/link/search/${encodeURIComponent(place.address)}') " class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  <button onclick="event.stopPropagation(); window.openKakaoDirections('${place.id}')" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                    길찾기
+                    카카오맵 길찾기
                   </button>
-                  <button onclick="event.stopPropagation(); location.href='tel:${place.phone}'" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                ${place.phone ? `
+                  <button onclick="event.stopPropagation(); location.href='tel:${place.phone.replace(/[^\d+]/g, '')}'" class="flex-1 py-1.5 flex items-center justify-center gap-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     전화
                   </button>
+                ` : ''}
                 </div>
                 
               </div>
@@ -261,74 +277,137 @@ window.openPlaceDetail = (id) => {
   // 준비된 텍스트들을 팝업창에 쏙쏙 집어넣습니다.
   safeSetText('detailEmoji', place.emoji);
   safeSetText('detailName', place.name);
-  safeSetText('detailCat', 'AI 추천'); // 보라색 태그는 깔끔하게 단어로 고정!
-  safeSetText('detailDesc', place.category); // 꼬여서 들어온 '진짜 추천 이유'를 넓은 설명칸으로!
-  safeSetText('detailRating', place.rating);
-  safeSetText('detailTime', place.estimatedTime);
-  safeSetText('detailAddr', place.address);
+  const categoryLabel = [place.category, place.subcategory].filter(Boolean).join(' · ');
+  safeSetText('detailCat', categoryLabel || '분류 정보 없음');
+  safeSetText('detailAddr', place.address || '주소 정보 없음');
 
-  const reviewCountEl = document.getElementById('detailReviewCount');
-  if (reviewCountEl) {
-      reviewCountEl.textContent = `(${place.reviewCount.toLocaleString()}개의 리뷰)`;
-  }
-
-  // 🌟 [추가된 핵심 코드] 카카오맵 노란색 찐리뷰/사진 보기 버튼 생성
-  const reviewsContainer = document.getElementById('reviewsContainer');
-  if (reviewsContainer) {
-      const searchQuery = encodeURIComponent(place.name + ' ' + place.address);
-      reviewsContainer.innerHTML = `
-        <button onclick="window.open('https://map.kakao.com/link/search/${searchQuery}')" 
-                class="w-full py-3.5 bg-[#FEE500] hover:bg-[#EBD300] text-black font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.83l-1.5 5.2 6.1-3.6c.92.11 1.85.17 2.8.17 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
-          </svg>
-          카카오맵 열기
-        </button>
-      `;
+  const phoneContainer = document.getElementById('detailPhoneContainer');
+  const phoneLink = document.getElementById('detailPhone');
+  if (phoneContainer && phoneLink) {
+      if (place.phone) {
+          phoneLink.textContent = place.phone;
+          phoneLink.href = `tel:${place.phone.replace(/[^\d+]/g, '')}`;
+          phoneContainer.classList.remove('hidden');
+          phoneContainer.classList.add('flex');
+      } else {
+          phoneLink.removeAttribute('href');
+          phoneContainer.classList.add('hidden');
+          phoneContainer.classList.remove('flex');
+      }
   }
 
   // 모달창 띄우기
   if (modalPlaceDetail) {
       modalPlaceDetail.classList.remove('hidden');
   } else {
-      alert(`[${place.name}]\n\n${place.category}\n\n📍 주소: ${place.address}`);
+      alert(`[${place.name}]\n\n${categoryLabel || '분류 정보 없음'}\n\n📍 주소: ${place.address || '주소 정보 없음'}${place.phone ? `\n☎️ 전화번호: ${place.phone}` : ''}`);
   }
 };
 
   document.getElementById('btnDetailClose').addEventListener('click', () => modalPlaceDetail.classList.add('hidden'));
 
   // 장소 교체 모달 열기
-  window.openReplaceModal = (id) => {
+  window.openReplaceModal = async (id) => {
     currentReplaceId = id;
     const currentPlace = currentCourse.find(p => p.id === id);
-    
-    // 같은 카테고리이면서 현재 코스에 없는 장소들 필터링
-    const alternatives = allPlacesPool.filter(p => p.id !== id && !currentCourse.some(c => c.id === p.id) && p.category === currentPlace.category);
-    
-    // 만약 대체 장소가 없으면 더미 아무거나 추가
-    if(alternatives.length === 0) {
-      alternatives.push(allPlacesPool[3], allPlacesPool[4]);
+    const container = document.getElementById('alternativesContainer');
+    if (!currentPlace || !container) return;
+
+    if (!selectedRegion || !Number.isFinite(mapCenter.lat) || !Number.isFinite(mapCenter.lng)) {
+      container.innerHTML = '<p class="p-5 text-center text-gray-500">지역 정보가 없습니다. 지역을 선택해 새 추천을 받아주세요.</p>';
+      modalAlternatives.classList.remove('hidden');
+      return;
     }
 
-    const container = document.getElementById('alternativesContainer');
-    container.innerHTML = alternatives.map(place => `
-      <button onclick="executeReplace('${place.id}')" class="w-full p-5 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left flex gap-4">
-        <span class="text-5xl">${place.emoji}</span>
-        <div>
-          <div class="flex gap-2 mb-1"><h3 class="text-xl font-bold">${place.name}</h3><span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">${place.category}</span></div>
-          <p class="text-sm text-gray-600 mb-2">${place.description}</p>
-          <div class="text-sm text-gray-500">⭐ ${place.rating} · 📍 ${place.address}</div>
-        </div>
-      </button>
-    `).join('');
-
     modalAlternatives.classList.remove('hidden');
+    container.innerHTML = '<p class="p-5 text-center text-gray-500">같은 지역의 장소를 찾고 있어요...</p>';
+
+    try {
+      const activeRequest = JSON.parse(
+        sessionStorage.getItem('activeRecommendationRequest') || '{}'
+      );
+      const response = await fetch('/api/get-alternatives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          region: selectedRegion,
+          lat: mapCenter.lat,
+          lng: mapCenter.lng,
+          category: currentPlace.category,
+          login_id: activeRequest.login_id,
+          roomId: activeRequest.roomId,
+          roomType: activeRequest.roomType,
+          mood: activeRequest.mood || [],
+          courseSequence: activeRequest.courseSequence || [],
+          extraMessage: activeRequest.extraMessage || '',
+          currentPlace: {
+            id: currentPlace.placeId,
+            name: currentPlace.name,
+            category: currentPlace.category
+          },
+          currentPlaces: currentCourse
+            .filter(place => place.id !== currentReplaceId)
+            .map(place => ({
+              name: place.name,
+              category: place.category,
+              address: place.address
+            })),
+          excludePlaceIds: currentCourse.map(place => place.placeId)
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.detail || `대체 장소 조회 실패 (${response.status})`);
+      }
+
+      const places = await response.json();
+      const alternatives = places
+        .filter(place => String(place.id) !== String(currentPlace.placeId))
+        .filter(place => !currentCourse.some(item => String(item.placeId) === String(place.id)))
+        .map(place => ({
+          id: `db-${place.id}`,
+          placeId: place.id,
+          name: place.placeName || place.name || '이름 정보 없음',
+          category: place.category,
+          description: place.reason || place.description || place.tags || '같은 방 취향 조건을 고려한 대체 장소입니다.',
+          address: place.address || '',
+          lat: Number(place.latitude),
+          lng: Number(place.longitude),
+          phone: place.phone || '',
+          emoji: '📍',
+          rating: place.rating || '-'
+        }));
+
+      if (alternatives.length === 0) {
+        container.innerHTML = '<p class="p-5 text-center text-gray-500">선택한 지역에 바꿀 장소가 더 없습니다.</p>';
+        return;
+      }
+
+      allPlacesPool = [...allPlacesPool.filter(place => !String(place.id).startsWith('db-')), ...alternatives];
+      container.innerHTML = alternatives.map(place => `
+        <button onclick="executeReplace('${place.id}')" class="w-full p-5 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left flex gap-4">
+          <span class="text-5xl">${place.emoji}</span>
+          <div>
+            <div class="flex gap-2 mb-1"><h3 class="text-xl font-bold">${place.name}</h3><span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">${place.category}</span></div>
+            <p class="text-sm text-gray-600 mb-2">${place.description}</p>
+            <div class="text-sm text-gray-500">📍 ${place.address}</div>
+          </div>
+        </button>
+      `).join('');
+    } catch (error) {
+      console.error('대체 장소를 불러오지 못했습니다.', error);
+      container.innerHTML = '<p class="p-5 text-center text-red-500">대체 장소를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>';
+    }
   };
 
   document.getElementById('btnCancelAlternatives').addEventListener('click', () => modalAlternatives.classList.add('hidden'));
 
   window.executeReplace = (newPlaceId) => {
     const newPlace = allPlacesPool.find(p => p.id === newPlaceId);
+    if (!newPlace) {
+      alert("선택한 대체 장소를 찾지 못했습니다. 다시 열어주세요.");
+      return;
+    }
     currentCourse = currentCourse.map(p => p.id === currentReplaceId ? newPlace : p);
     
     modalAlternatives.classList.add('hidden');
@@ -346,106 +425,148 @@ window.openPlaceDetail = (id) => {
     alert("코스 정보가 클립보드에 복사되었습니다!");
   });
 
+  const loginId = localStorage.getItem('loginId') || selectedCourseContext.login_id;
+  const getPlaceIds = () => currentCourse.map(place => Number(place.placeId));
+  const getAcceptedRooms = async () => {
+    if (!loginId) throw new Error('로그인 정보가 없습니다. 다시 로그인해 주세요.');
+    const response = await fetch(`/api/rooms?login_id=${encodeURIComponent(loginId)}`);
+    if (!response.ok) throw new Error('방 목록을 불러오지 못했습니다.');
+    const rooms = await response.json();
+    return rooms.filter(room => String(room.memberStatus).toUpperCase() === 'ACCEPTED');
+  };
+  const fillRoomSelect = async (select) => {
+    select.innerHTML = '<option value="">방 선택</option>';
+    const rooms = await getAcceptedRooms();
+    rooms.forEach(room => {
+      const option = document.createElement('option');
+      option.value = room.id;
+      option.textContent = `${room.roomName} (${room.roomType})`;
+      select.appendChild(option);
+    });
+    const activeRoomId = localStorage.getItem('activeRoomId');
+    if (activeRoomId && rooms.some(room => String(room.id) === activeRoomId)) {
+      select.value = activeRoomId;
+    }
+    if (rooms.length === 0) {
+      select.innerHTML = '<option value="">승인된 방이 없습니다. 먼저 방에 가입해 주세요.</option>';
+    }
+  };
+  const getCoursePayload = (title, roomId, plannedDate) => ({
+    login_id: loginId,
+    roomId: roomId ? Number(roomId) : null,
+    title,
+    region: selectedRegion,
+    plannedDate: plannedDate && plannedDate !== '날짜 미정' ? plannedDate : null,
+    startTime: localStorage.getItem('savedStartTime') || null,
+    endTime: localStorage.getItem('savedEndTime') || null,
+    placeIds: getPlaceIds()
+  });
+  const defaultCourseTitle = selectedCourseContext.course_name
+    || selectedCourseContext.title
+    || (typeof courseTitle !== 'undefined' ? courseTitle : 'AI 맞춤 데이트 코스');
+
   document.getElementById('btnSaveCourse').addEventListener('click', () => {
-    isSaved = true;
-    document.getElementById('iconSave').classList.add('text-pink-600', 'fill-pink-600');
-    alert("내 마이페이지에 코스가 저장되었습니다.");
+    window.saveCurrentCourse();
   });
 
- // 🌟 캘린더 저장 팝업 제어 로직
-const btnAddToCalendar = document.getElementById('btnAddToCalendar'); // 일정 추가 버튼
-const saveCourseModal = document.getElementById('saveCourseModal');   // 팝업창
-const btnCancelSave = document.getElementById('btnCancelSave');       // 취소 버튼
-const btnConfirmSave = document.getElementById('btnConfirmSave');     // 저장 완료 버튼
-const customCourseTitleInput = document.getElementById('customCourseTitle'); // 제목 입력칸
-
-const savedDate = localStorage.getItem('savedCourseDate');
-if (savedDate === '날짜 미정' && btnAddToCalendar) {
+  const btnAddToCalendar = document.getElementById('btnAddToCalendar');
+  const saveCourseModal = document.getElementById('saveCourseModal');
+  const btnCancelSave = document.getElementById('btnCancelSave');
+  const btnConfirmSave = document.getElementById('btnConfirmSave');
+  const customCourseTitleInput = document.getElementById('customCourseTitle');
+  const scheduleRoomSelect = document.getElementById('scheduleRoomSelect');
+  const scheduleEventDate = document.getElementById('scheduleEventDate');
+  const savedDate = localStorage.getItem('savedCourseDate');
+  if (savedDate === '날짜 미정' && btnAddToCalendar) {
     btnAddToCalendar.classList.add('hidden');
-}
+  }
 
-if (btnAddToCalendar && saveCourseModal) {
-    // 1. [캘린더에 일정 추가하기] 버튼 누르면 팝업 열기
-    btnAddToCalendar.addEventListener('click', () => {
-        // 입력칸에 기본 추천 제목을 미리 채워주기
-        customCourseTitleInput.value = typeof courseTitle !== 'undefined' ? courseTitle : "AI 맞춤 데이트 코스";
-        saveCourseModal.classList.remove('hidden');
-        saveCourseModal.classList.add('flex'); // 화면 중앙에 띄우기
+  if (btnAddToCalendar && saveCourseModal) {
+    btnAddToCalendar.addEventListener('click', async () => {
+      customCourseTitleInput.value = defaultCourseTitle;
+      const today = new Date();
+      scheduleEventDate.value = savedDate && savedDate !== '날짜 미정'
+        ? savedDate
+        : `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      try {
+        await fillRoomSelect(scheduleRoomSelect);
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+      saveCourseModal.classList.remove('hidden');
+      saveCourseModal.classList.add('flex');
     });
 
-    // 2. [취소] 버튼 누르면 팝업 닫기
     btnCancelSave.addEventListener('click', () => {
+      saveCourseModal.classList.add('hidden');
+      saveCourseModal.classList.remove('flex');
+    });
+
+    btnConfirmSave.addEventListener('click', async () => {
+      const title = customCourseTitleInput.value.trim();
+      const eventDate = scheduleEventDate.value;
+      const roomId = scheduleRoomSelect.value;
+      if (!title || !eventDate || !roomId) {
+        alert('일정 제목, 날짜와 방을 모두 선택해 주세요.');
+        return;
+      }
+      btnConfirmSave.disabled = true;
+      try {
+        const response = await fetch('/api/courses/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...getCoursePayload(title, roomId, eventDate),
+            eventDate,
+            startTime: localStorage.getItem('savedStartTime') || null,
+            endTime: localStorage.getItem('savedEndTime') || null
+          })
+        });
+        if (!response.ok) throw new Error(await response.text() || '일정 저장에 실패했습니다.');
         saveCourseModal.classList.add('hidden');
         saveCourseModal.classList.remove('flex');
+        alert('캘린더에 코스가 저장되었습니다.');
+        window.location.href = '/calendar';
+      } catch (error) {
+        console.error('일정 저장 실패:', error);
+        alert(error.message || '일정 저장에 실패했습니다.');
+      } finally {
+        btnConfirmSave.disabled = false;
+      }
     });
+  }
 
-    // 3. [저장 완료] 버튼 누르면 내가 쓴 제목으로 저장 후 캘린더 이동!
-    btnConfirmSave.addEventListener('click', () => {
-        
-        const savedDate = localStorage.getItem('savedCourseDate');
-        const todayStr = new Date().toISOString().split('T')[0]; 
-        const targetDate = savedDate ? savedDate : todayStr; 
-
-        const savedStart = localStorage.getItem('savedStartTime') || '';
-        const savedEnd = localStorage.getItem('savedEndTime') || '';
-        const timeString = (savedStart && savedEnd) ? `${savedStart} ~ ${savedEnd}` : '';
-
-        const finalTitle = customCourseTitleInput.value.trim() || "이름 없는 코스";
-        const placesStr = currentCourse.map(p => p.name).join(" ➔ ");
-        const selectedRoom = document.querySelector('input[name="roomType"]:checked').value;
-
-        // 피그마 캘린더가 읽을 수 있는 형태로 데이터 조립
-        const newCourseEvent = {
-            id: `event-${Date.now()}`,
-            date: targetDate,
-            title: finalTitle,
-            description: placesStr,
-            type: 'course', // 💡 핵심: 'course' 타입으로 저장해야 달력에 보라색 점이 찍힘!
-            room:selectedRoom,
-            time: timeString
-        };
-
-        // 로컬 스토리지에 저장
-        let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
-        events.push(newCourseEvent);
-        localStorage.setItem('calendarEvents', JSON.stringify(events));
-
-        // 팝업 닫고 캘린더로 이동
-        saveCourseModal.classList.add('hidden');
-        alert("📅 캘린더에 코스가 추가되었습니다!");
-        window.location.href = 'calendar'; 
-    });
-}
-
-// 💡 [수정] 코스 보관하기 기능 (어디서든 부를 수 있게 전역 함수로 설정)
-window.saveCurrentCourse = function() {
-    // 1. 마이페이지에 저장해둘 기존 보관함 데이터를 불러옵니다 (없으면 빈 배열)
-    const savedCourses = JSON.parse(localStorage.getItem('mySavedCourses') || '[]');
-
-    // 2. 메인 화면에서 골랐던 날짜, 시간, 방 타입(연인/친구) 가져오기
-    const date = localStorage.getItem('savedCourseDate') || '날짜 미지정';
-    const startT = localStorage.getItem('savedStartTime') || '10:00';
-    const endT = localStorage.getItem('savedEndTime') || '22:00';
-    const roomType = localStorage.getItem('activeRoomType') || 'none'; 
-
-    // 3. 보관함에 넣을 '하나의 완성된 코스 세트' 만들기
-    const newSavedCourse = {
-        id: `course-${Date.now()}`,
-        date: date,
-        time: `${startT} ~ ${endT}`,
-        room: roomType, 
-        places: typeof currentCourse !== 'undefined' ? currentCourse : [] // 에러 방지용 안전장치 추가
-    };
-
-    // 4. 보관함 배열에 새 코스를 추가하고 브라우저에 저장
-    savedCourses.push(newSavedCourse);
-    localStorage.setItem('mySavedCourses', JSON.stringify(savedCourses));
-
-    // 5. 유저에게 알려주기
-    alert('코스가 성공적으로 보관되었습니다! 💖');
-
-    window.location.href = "mypage";
-};
+  window.saveCurrentCourse = async function() {
+    const button = document.getElementById('btnSaveCourse');
+    if (!loginId) {
+      alert('로그인 정보가 없습니다. 다시 로그인해 주세요.');
+      return;
+    }
+    button.disabled = true;
+    try {
+      const activeRoomId = localStorage.getItem('activeRoomId');
+      const response = await fetch('/api/courses/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(getCoursePayload(
+          defaultCourseTitle,
+          activeRoomId,
+          localStorage.getItem('savedCourseDate')
+        ))
+      });
+      if (!response.ok) throw new Error(await response.text() || '코스 보관에 실패했습니다.');
+      isSaved = true;
+      document.getElementById('iconSave').classList.add('text-pink-600', 'fill-pink-600');
+      alert('코스가 DB에 보관되었습니다.');
+      window.location.href = '/mypage';
+    } catch (error) {
+      console.error('코스 보관 실패:', error);
+      alert(error.message || '코스 보관에 실패했습니다.');
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   // 초기 렌더링
   renderCourse();

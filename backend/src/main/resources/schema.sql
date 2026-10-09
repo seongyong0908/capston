@@ -49,48 +49,66 @@ CREATE TABLE IF NOT EXISTS ai_request (
     CONSTRAINT fk_ai_request_room FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE
 );
 
--- 6. 추천된 코스 테이블 (단수형 course)
+
+-- 6. 사용자가 선택해 보관하거나 일정에 추가한 코스
 CREATE TABLE IF NOT EXISTS course (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    room_id BIGINT NOT NULL,
-    course_title VARCHAR(150),
-    is_selected BOOLEAN DEFAULT FALSE,
-    CONSTRAINT fk_course_room FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE
+    user_id BIGINT NOT NULL,
+    room_id BIGINT NULL,
+    course_title VARCHAR(150) NOT NULL,
+    region VARCHAR(100),
+    status VARCHAR(20) NOT NULL DEFAULT 'SAVED',
+    planned_date DATE NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
+    CONSTRAINT fk_course_user
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    CONSTRAINT fk_course_room
+        FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE SET NULL
 );
 
--- 7. 장소 테이블 (course 참조)
+-- 7. 전체 추천 장소 목록 (코스별 연결 정보는 course_place에서 관리)
 CREATE TABLE IF NOT EXISTS place (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    course_id BIGINT,
     place_name VARCHAR(255) NOT NULL,
     category VARCHAR(255),
+    subcategory VARCHAR(255),
     address VARCHAR(255),
     description TEXT,
     latitude DECIMAL(10, 7),
     longitude DECIMAL(10, 7),
+    region VARCHAR(255),
+    phone VARCHAR(255),
     opening_hours VARCHAR(255),
-    rating DECIMAL(3, 2),
-    visit_order INT,
-    CONSTRAINT fk_place_course FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
+    tags VARCHAR(255),
+    rating DECIMAL(3, 2)
 );
 
--- 8. 유저 코스 보관함 테이블 (단수형 saved_course)
-CREATE TABLE IF NOT EXISTS saved_course (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+-- 8. 코스에 포함된 장소와 방문 순서
+CREATE TABLE IF NOT EXISTS course_place (
     course_id BIGINT NOT NULL,
-    status VARCHAR(20),
-    CONSTRAINT fk_saved_course_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-    CONSTRAINT fk_saved_course_course FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
+    place_id BIGINT NOT NULL,
+    visit_order INT NOT NULL,
+    PRIMARY KEY (course_id, visit_order),
+    CONSTRAINT uq_course_place
+        UNIQUE (course_id, place_id),
+    CONSTRAINT fk_course_place_course
+        FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE,
+    CONSTRAINT fk_course_place_place
+        FOREIGN KEY (place_id) REFERENCES place(id)
 );
 
--- 9. 코스별 리뷰 테이블 (단수형 review)
-CREATE TABLE IF NOT EXISTS review (
+-- 9. 캘린더에 등록된 코스 일정
+CREATE TABLE IF NOT EXISTS calendar_event (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    course_id BIGINT NOT NULL,
-    rating INT,
-    content TEXT,
-    CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-    CONSTRAINT fk_review_course FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE
+    course_id BIGINT NOT NULL UNIQUE,
+    room_id BIGINT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    event_date DATE NOT NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
+    CONSTRAINT fk_calendar_event_course
+        FOREIGN KEY (course_id) REFERENCES course(id) ON DELETE CASCADE,
+    CONSTRAINT fk_calendar_event_room
+        FOREIGN KEY (room_id) REFERENCES room(id)
 );

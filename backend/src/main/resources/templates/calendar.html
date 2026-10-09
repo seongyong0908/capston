@@ -7,15 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#f8f9fc] min-h-screen text-gray-800 font-sans antialiased pb-20">
-
-    <!-- 🌟 좌측 상단 플로팅 '메인으로' 버튼 -->
-  <a href="/home" class="absolute top-6 left-4 md:top-8 md:left-8 z-30 flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md border border-gray-200 shadow-sm hover:shadow-md hover:-translate-x-1 rounded-2xl text-sm font-bold text-gray-700 hover:text-purple-600 transition-all cursor-pointer">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-    </svg>
-    메인으로
-  </a>
+<body class="bg-[#f8f9fc] min-h-screen text-gray-800 font-sans antialiased pb-24">
 
   <div class="max-w-5xl mx-auto px-4 py-8 md:py-12">
     
@@ -89,23 +81,14 @@
         <!-- JS가 여기에 일정 카드를 꽂아넣습니다 -->
       </div>
 
-      <!-- 일정 추가 버튼 -->
-      <div class="mt-6 pt-4 border-t border-gray-100">
-        <button id="btnAddEvent" class="w-full hidden px-4 py-3.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-purple-500/25 transition-all">
-          + 새로운 일정 추가하기
-        </button>
-      </div>
-      
-      <!-- JS 연동용 더미 (숨김) -->
-      <div id="quickAddCard" class="hidden"></div>
     </div>
   </div>
 
-  <!-- 🌟 일정 추가/수정용 2차 모달창 (기존 기능 유지) -->
+  <!-- 코스 일정 수정 모달 -->
   <div id="eventModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-200">
       <div class="flex justify-between items-center mb-6">
-        <h3 id="modalTitle" class="text-xl font-extrabold text-gray-900">일정 추가</h3>
+        <h3 id="modalTitle" class="text-xl font-extrabold text-gray-900">코스 일정 수정</h3>
         <button id="btnModalClose" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
       </div>
       
@@ -117,6 +100,10 @@
           <input type="text" id="eventTitle" placeholder="일정 이름을 입력하세요" class="w-full h-12 px-4 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-purple-500">
         </div>
         <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">날짜</label>
+          <input type="date" id="eventDate" class="w-full h-12 px-4 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-purple-500">
+        </div>
+        <div>
           <label class="block text-xs font-bold text-gray-500 uppercase mb-2">시간</label>
           <div class="flex items-center gap-2">
             <input type="time" id="eventTime" class="w-full h-12 px-4 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-purple-500">
@@ -124,42 +111,40 @@
             <input type="time" id="eventEndTime" class="w-full h-12 px-4 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-purple-500">
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">상세 내용</label>
-          <textarea id="eventDesc" rows="3" class="w-full p-4 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-purple-500 resize-none"></textarea>
-        </div>
         <div class="flex gap-3 pt-4">
           <button id="btnModalCancel" class="flex-1 h-12 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-2xl">취소</button>
-          <button id="btnModalSave" class="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 text-white text-sm font-bold rounded-2xl shadow-lg">저장하기</button>
+          <button id="btnModalSave" class="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 text-white text-sm font-bold rounded-2xl shadow-lg">수정 저장</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 캘린더 JS 파일 연결 -->
-  <script src="calendar.js"></script>
-  
-  <!-- 💡 팝업을 열고 닫는 마법의 스크립트 (JS 수정 없이 HTML에서 바로 해결!) -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const grid = document.getElementById('calendarGrid');
-      const scheduleModal = document.getElementById('scheduleModal');
-      const closeBtn = document.getElementById('btnCloseSchedule');
+  <script src="calendar.js?v=course-db"></script>
 
-      // 1. 달력의 날짜를 클릭하면 팝업 열기
-      grid.addEventListener('click', (e) => {
-        if (e.target.closest('button[data-day]')) {
-          scheduleModal.classList.remove('hidden');
-          scheduleModal.classList.add('flex'); // 팝업 띄우기
-        }
-      });
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t-2 border-gray-200 shadow-2xl z-50" aria-label="주요 메뉴">
+    <div class="max-w-7xl mx-auto px-2">
+      <div class="grid grid-cols-4">
+        <a href="/home" class="relative flex flex-col items-center justify-center py-3 px-1 transition-all text-gray-500 hover:text-purple-500">
+          <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="text-xs font-semibold">홈</span>
+        </a>
+        <a href="/map" class="relative flex flex-col items-center justify-center py-3 px-1 transition-all text-gray-500 hover:text-purple-500">
+          <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="text-xs font-semibold">지도보기</span>
+        </a>
+        <a href="/calendar" aria-current="page" class="relative flex flex-col items-center justify-center py-3 px-1 transition-all text-purple-600">
+          <svg class="w-6 h-6 mb-1 fill-purple-100 stroke-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+          <span class="text-xs font-semibold">캘린더</span>
+          <span class="absolute bottom-0 w-8 h-0.5 bg-purple-600 rounded-full"></span>
+        </a>
+        <a href="/mypage" class="relative flex flex-col items-center justify-center py-3 px-1 transition-all text-gray-500 hover:text-purple-500">
+          <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span class="text-xs font-semibold">마이페이지</span>
+        </a>
+      </div>
+    </div>
+  </nav>
 
-      // 2. X 버튼 누르면 팝업 닫기
-      closeBtn.addEventListener('click', () => {
-        scheduleModal.classList.add('hidden');
-        scheduleModal.classList.remove('flex');
-      });
-    });
-  </script>
 </body>
 </html>

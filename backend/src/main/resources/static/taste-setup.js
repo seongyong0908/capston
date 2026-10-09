@@ -2,13 +2,20 @@ document.addEventListener('DOMContentLoaded', function() {
   let favoriteMoods = [];
   let dislikedActivities = [];
   let dietaryRestrictions = [];
-  let hasExistingTaste = false;
 
   const buttons = document.querySelectorAll('.taste-btn');
   const customDietInput = document.getElementById('customDiet');
   const completeBtn = document.getElementById('completeBtn');
   const cancelBtn = document.getElementById('cancelBtn');
   const clearAllBtn = document.getElementById('clearAllBtn');
+
+  const updateCompleteButton = () => {
+    const hasSelection = favoriteMoods.length > 0
+      || dislikedActivities.length > 0
+      || dietaryRestrictions.length > 0
+      || Boolean(customDietInput && customDietInput.value.trim());
+    completeBtn.disabled = !hasSelection;
+  };
 
   // UI 업데이트 및 버튼 클릭 로직
   const updateAllUI = () => {
@@ -32,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isSelected) btn.classList.add('border-orange-500', 'bg-orange-50', 'shadow-md');
         else btn.classList.add('border-gray-200', 'hover:border-orange-300');
       }
+      btn.setAttribute('aria-pressed', String(isSelected));
     });
   };
 
@@ -52,19 +60,27 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       updateAllUI();
-      if (favoriteMoods.length > 0) {
-        completeBtn.removeAttribute('disabled');
-      } else {
-        completeBtn.setAttribute('disabled', 'true');
-      }
+      updateCompleteButton();
     });
+  });
+
+  customDietInput?.addEventListener('input', updateCompleteButton);
+
+  clearAllBtn?.addEventListener('click', () => {
+    favoriteMoods = [];
+    dislikedActivities = [];
+    dietaryRestrictions = [];
+    if (customDietInput) customDietInput.value = '';
+    updateAllUI();
+    updateCompleteButton();
+  });
+
+  cancelBtn?.addEventListener('click', () => {
+    window.location.href = '/mypage';
   });
 
   // 💡 핵심: 백엔드로 전송하는 완료 버튼 클릭 이벤트
   completeBtn.addEventListener('click', async () => {
-    // 버튼이 정상적으로 눌렸는지 확인하는 경고창 (이게 떠야 합니다!)
-    alert("취향 설정 완료"); 
-
     // ✅ 수정 후 (로그인한 사람의 아이디를 브라우저 메모장에서 몰래 가져옴!)
     const login_id = localStorage.getItem("loginId");
 
@@ -83,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
       food_memo: customDietInput ? customDietInput.value : ""
     };
 
+    completeBtn.disabled = true;
     try {
       const response = await fetch('/api/taste-setup', {
         method: 'POST',
@@ -93,14 +110,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (response.ok) {
         alert("취향 설정이 완료되었습니다!");
         localStorage.setItem('userTaste', 'done');
-        window.location.href = "/home"; // 성공 시 이동
+        window.location.href = "/mypage";
       } else {
         alert("서버 오류로 취향 저장에 실패했습니다.");
+        updateCompleteButton();
       }
     } catch (error) {
       console.error("통신 에러:", error);
       alert("서버와 통신 중 에러가 발생했습니다.");
+      updateCompleteButton();
     }
   });
 
+  updateAllUI();
+  updateCompleteButton();
 });

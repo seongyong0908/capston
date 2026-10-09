@@ -15,7 +15,6 @@ import java.util.List;
 public class PlaceCsvLoader implements CommandLineRunner {
 
     private final PlaceRepository placeRepository;
-    private static final Long DEFAULT_COURSE_ID = 3L;
 
     public PlaceCsvLoader(PlaceRepository placeRepository) {
         this.placeRepository = placeRepository;
@@ -34,7 +33,7 @@ public class PlaceCsvLoader implements CommandLineRunner {
         List<Place> places = new ArrayList<>();
 
         try (CSVReader reader = new CSVReader(new InputStreamReader(
-                new ClassPathResource("data/place_final.csv").getInputStream(),
+                new ClassPathResource("data/places_data.csv").getInputStream(),
                 StandardCharsets.UTF_8))) {
 
             String[] tokens;
@@ -49,12 +48,10 @@ public class PlaceCsvLoader implements CommandLineRunner {
 
                 try {
                     Place place = new Place();
-                    place.setCourseId(DEFAULT_COURSE_ID);
                     place.setPlaceName(tokens[1].trim());
                     place.setAddress(tokens[2].trim());
                     place.setLatitude(new BigDecimal(tokens[4].trim()));
                     place.setLongitude(new BigDecimal(tokens[5].trim()));
-                    place.setVisitOrder(1);
                     place.setCategory(tokens[6].trim());
                     place.setDescription(tokens[8].trim());
 

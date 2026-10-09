@@ -30,11 +30,15 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${convert(parts[0])} ~ ${convert(parts[1])}`;
   }
 
-  function formatBudget(budgetStr) {
-    if (!budgetStr || budgetStr === "미정") return "미정";
-    const num = Number(budgetStr);
-    if (isNaN(num)) return budgetStr;
-    return num.toLocaleString('ko-KR');
+  function formatLocation(address, fallback) {
+    if (!address) return fallback || "";
+
+    const district = address.match(/서울특별시\s+\S+구/);
+    const dong = address.match(/\(([^,)]*(?:동|가|리))/)
+      || address.match(/\s([가-힣0-9]+(?:동|가|리))(?=\s|$)/);
+    if (district && dong) return `${district[0]}, ${dong[1]}`;
+    if (district) return district[0];
+    return address;
   }
 
   // 💡 파이썬 데이터를 화면용 데이터로 예쁘게 가공하는 함수
@@ -44,13 +48,23 @@ document.addEventListener('DOMContentLoaded', function() {
       return {
         id: String(courseNum),
         name: course.course_name || `AI 추천 코스 ${courseNum}`,
-        time: formatTimeRange(course.time),
-        budget: formatBudget(course.budget),
+        time: course.time ? formatTimeRange(course.time): "시간 미정",
+
         places: (course.places || []).map(item => ({
           emoji: item.noResult ? "❔" : (CATEGORY_ICONS[item.categoryId] || "📍"),
           name: item.noResult ? "검색 결과 없음" : (item.place_name || item.name),
-          category: item.reason || item.category,
-          address: item.address,
+
+          category: item.category || "카테고리 없음",
+          subcategory: item.subcategory || "",
+          tags: item.tags || "",
+          reason: item.reason || "", // AI의 추천 이유
+          region: item.region || "",
+          phone: item.phone || "",
+          address: item.address || "",
+          locationLabel: formatLocation(item.address, item.region),
+          lat: item.lat == null ? null : Number(item.lat),
+          lng: item.lng == null ? null : Number(item.lng),
+          placeId: item.id,
           noResult: !!item.noResult
         }))
       };
@@ -79,11 +93,35 @@ document.addEventListener('DOMContentLoaded', function() {
       const checkIcon = isSelected ? `<div class="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center"><svg class="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>` : '';
 
       let placesHtml = course.places.map((place, pIdx) => `
-        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg ${place.noResult ? 'opacity-60' : ''}">
-          <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">${pIdx + 1}</div>
+        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg ${place.noResult ? 'opacity-60' : ''}">
+          <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 mt-1">${pIdx + 1}</div>
           <div class="flex-1">
-            <div class="flex items-center gap-2"><span class="text-xl">${place.emoji}</span><h4 class="font-semibold text-sm text-gray-800">${place.name}</h4></div>
-            <p class="text-xs text-gray-500 mt-1">${place.category}</p>
+            <!-- 1. 장소 이름 & 이모지 -->
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${place.emoji}</span>
+              <h4 class="font-semibold text-base text-gray-800">${place.name}</h4>
+            </div>
+            
+            <!-- 2. 카테고리, 서브카테고리, 지역 묶음 -->
+            <p class="text-xs text-gray-500 mt-1">
+              <span class="font-medium">${place.category}</span>
+              ${place.subcategory ? `<span class="text-gray-400 mx-1">></span><span>${place.subcategory}</span>` : ''}
+              ${place.locationLabel ? `<span class="mx-1">|</span><span>📍 ${place.locationLabel}</span>` : ''}
+            </p>
+
+            <!-- 3. 핵심 태그 (파란색 글씨로 강조) -->
+            ${place.tags ? `
+              <p class="text-xs text-blue-500 font-medium mt-1">
+                ${place.tags}
+              </p>
+            ` : ''}
+            
+            <!-- 4. AI 추천 이유 (작은 말풍선 느낌) -->
+            ${place.reason ? `
+              <div class="mt-2 p-2 bg-white rounded-md border border-gray-200 text-xs text-gray-600 shadow-sm">
+                💬 ${place.reason}
+              </div>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -93,8 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="p-6 bg-gradient-to-br ${headerGradient} text-white relative">
             ${checkIcon}
             <h3 class="text-2xl font-bold">${course.name}</h3>
-            <p class="text-sm opacity-90 mt-2">${course.places.length}개 장소 · ${course.time}</p>
-            <p class="text-sm opacity-90">예상 비용: ${course.budget}원</p>
+            <p class="text-sm opacity-90 mt-2">${course.places.length}개 장소
           </div>
           <div class="p-6 space-y-3">
             ${placesHtml}
@@ -133,7 +170,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const dataForNextPage = {
             course_name: mySelectedCourse.name,
             totalTime: mySelectedCourse.time,
-            totalBudget: mySelectedCourse.budget,
+            region: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').region || '',
+            lat: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').lat,
+            lng: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').lng,
+            login_id: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').login_id || '',
+            roomId: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').roomId,
+            roomType: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').roomType || '',
+            mood: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').mood || [],
+            courseSequence: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').courseSequence || [],
+            extraMessage: JSON.parse(sessionStorage.getItem('activeRecommendationRequest') || '{}').extraMessage || '',
             places: mySelectedCourse.places
         };
         sessionStorage.setItem('finalSelectedCourse', JSON.stringify(dataForNextPage));
@@ -161,13 +206,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     console.log("👉 백엔드로 AI 코스 생성 요청 시작...");
+    if (!requestData.region) {
+      console.error("❌ 추천 요청에 선택 지역이 없습니다.", requestData);
+      sessionStorage.removeItem('pendingAiRequest');
+      if (loader) {
+        loader.classList.add('hidden');
+        loader.classList.remove('flex');
+      }
+      alert("선택 지역 정보가 없습니다. 지역 선택 화면에서 다시 추천해 주세요.");
+      window.location.href = '/preferences';
+      return;
+    }
 
     fetch('/api/get-course', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData)
     })
-    .then(response => response.json())
+    .then(async response => {
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || "추천 요청에 실패했습니다.");
+      }
+      return data;
+    })
     .then(data => {
       console.log("✅ AI 추천 결과 도착!", data);
 
@@ -180,6 +242,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // 다음을 위해 결과 저장
       sessionStorage.setItem('recommendedCourses', JSON.stringify(data.courses));
       sessionStorage.setItem('aiCourses', JSON.stringify(data.courses));
+      sessionStorage.setItem('activeRecommendationRequest', JSON.stringify({
+        region: requestData.region,
+        lat: requestData.lat,
+        lng: requestData.lng,
+        login_id: requestData.login_id,
+        roomId: requestData.roomId,
+        roomType: requestData.roomType,
+        mood: requestData.mood,
+        courseSequence: requestData.courseSequence,
+        extraMessage: requestData.extraMessage
+      }));
       
       // 일회용 임시 데이터 삭제
       sessionStorage.removeItem('pendingAiRequest');
@@ -194,8 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loader.classList.add('hidden');
         loader.classList.remove('flex');
       }
-      alert("AI 코스 생성 중 오류가 발생했습니다.");
-      window.location.href = '/preferences'; // 오류 시 1페이지로 돌려보냄
+      alert(`AI 코스 생성 중 오류가 발생했습니다: ${error.message}`);
+      // window.location.href = '/preferences'; // 오류 시 1페이지로 돌려보냄
     });
 
   } else {

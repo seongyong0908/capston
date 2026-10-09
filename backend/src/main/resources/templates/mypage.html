@@ -26,10 +26,16 @@
           <p class="text-xs text-gray-500">내 정보 및 설정</p>
         </div>
       </div>
-      <button id="btnLogout" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors">
-        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-        로그아웃
-      </button>
+      <div class="flex items-center gap-2">
+        <a href="/home" class="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white text-sm font-semibold h-10 px-3 text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors" aria-label="홈으로 이동">
+          <svg class="w-5 h-5 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          홈으로
+        </a>
+        <button id="btnLogout" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-3 sm:px-4 py-2 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors">
+          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          로그아웃
+        </button>
+      </div>
       
     </div>
   </header>
@@ -350,7 +356,7 @@
       if (navBar) navBar.className = `absolute bottom-0 w-8 h-0.5 ${c.bar} rounded-full`;
     })();
   </script>
-  <script src="mypage.js"></script>
+  <script src="mypage.js?v=course-db"></script>
   
   <!-- 💡 상세 코스 보기 팝업 -->
 <div id="detailModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -385,9 +391,7 @@
         <div id="roomSelectArea" class="hidden mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
             <p class="text-xs font-bold text-gray-700 mb-2">어느 방 캘린더에 추가할까요?</p>
             <select id="scheduleRoomSelect" class="w-full bg-white border border-gray-300 p-2 rounded-md outline-none focus:border-purple-500 text-sm font-medium">
-                <option value="couple">❤️ 연인 방</option>
-                <option value="friend">⭐ 친구 방</option>
-                <option value="family">🍀 가족 방</option>
+                <option value="">승인된 방을 불러오는 중...</option>
             </select>
         </div>
         
