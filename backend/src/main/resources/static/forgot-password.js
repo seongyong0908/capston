@@ -10,23 +10,42 @@ document.addEventListener('DOMContentLoaded', function() {
   form.addEventListener('submit', function(e) {
     e.preventDefault(); // 기본 새로고침 방지
 
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
     console.log("비밀번호 재설정 이메일 발송 요청:", email);
 
-    /* TODO: 백엔드 API 연동 시 이곳에 fetch 요청 작성
-       fetch('/api/forgot-password', {
-           method: 'POST',
-           body: JSON.stringify({ email })
-       }).then(...)
-    */
+    if (!email) {
+      alert("이메일을 입력해주세요!");
+      return;
+    }
 
-    // 화면 상태 변경 (emailSent = true와 동일한 효과)
-    form.classList.add('hidden'); // 폼 숨기기
-    successMessage.classList.remove('hidden'); // 성공 메시지 보여주기
-    
-    // 헤더 텍스트 변경
-    cardTitle.textContent = "이메일 발송 완료";
-    cardDescription.textContent = "비밀번호 재설정 링크를 보내드렸습니다";
+    // 💡 백엔드 API 연동 fetch 요청
+    fetch('/api/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: email })
+    })
+    .then(async response => {
+      const text = await response.text();
+      
+      if (response.ok) {
+        // 성공 시: 화면 상태 변경
+        form.classList.add('hidden'); // 폼 숨기기
+        successMessage.classList.remove('hidden'); // 성공 메시지 보여주기
+        
+        // 헤더 텍스트 변경
+        cardTitle.textContent = "이메일 발송 완료";
+        cardDescription.textContent = "비밀번호 재설정 링크를 보내드렸습니다";
+      } else {
+        // 실패 시 (예: 가입되지 않은 이메일 등 서버 에러 메시지 출력)
+        alert(text || "메일 전송에 실패했습니다.");
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert("서버 통신 중 오류가 발생했습니다.");
+    });
   });
 
   // 2. 다시 시도하기 버튼 이벤트

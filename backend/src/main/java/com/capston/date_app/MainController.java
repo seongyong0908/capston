@@ -70,4 +70,10 @@ public class MainController {
     public String showResultPage() {
         return "result";
     }
+
+   
+    @GetMapping("/reset-password")
+    public String showResetPasswordPage() {
+        return "reset-password"; // templates/reset-password.html 렌더링
+    }
 }
