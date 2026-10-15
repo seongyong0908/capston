@@ -295,7 +295,6 @@ const renderRooms = async () => {
   // 초기 렌더링 실행
   renderProfile();
   renderRooms();
-  renderSavedCourses();
   loadUserInfo();
   renderMyRooms();
 

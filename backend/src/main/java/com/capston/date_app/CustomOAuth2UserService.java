@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -33,35 +34,45 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         Map<String, Object> attributes = oAuth2User.getAttributes();
         
-        String providerId = String.valueOf(attributes.get(userNameAttributeName)); // 소셜 고유 PK
+        Object providerIdValue = attributes.get(userNameAttributeName);
+        if (providerIdValue == null) {
+            throw new OAuth2AuthenticationException("소셜 로그인 사용자 식별 정보를 찾을 수 없습니다.");
+        }
+        String providerId = String.valueOf(providerIdValue);
         String email = null;
         String name = null;
 
         // 카카오 / 구글 제공 정보 추출
         if ("KAKAO".equals(registrationId)) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            if (kakaoAccount != null) {
-                email = (String) kakaoAccount.get("email");
-                Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-                if (profile != null) {
-                    name = (String) profile.get("nickname");
+            Object accountValue = attributes.get("kakao_account");
+            if (accountValue instanceof Map<?, ?> kakaoAccount) {
+                email = stringValue(kakaoAccount.get("email"));
+                Object profileValue = kakaoAccount.get("profile");
+                if (profileValue instanceof Map<?, ?> profile) {
+                    name = stringValue(profile.get("nickname"));
                 }
             }
         } else if ("GOOGLE".equals(registrationId)) {
-            email = (String) attributes.get("email");
-            name = (String) attributes.get("name");
+            email = stringValue(attributes.get("email"));
+            name = stringValue(attributes.get("name"));
+        } else {
+            throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인 제공자입니다.");
         }
 
-        // 👉 완벽하게 고유성이 보장되는 loginId 생성 (예: KAKAO_38291048 / GOOGLE_10928374921)
         String loginId = registrationId + "_" + providerId;
 
-        // DB 저장 또는 기존 유저 가져오기
         saveOrUpdateUser(loginId, name, email, registrationId);
 
+        Map<String, Object> principalAttributes = new HashMap<>(attributes);
+        principalAttributes.put("loginId", loginId);
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
-                attributes,
+                principalAttributes,
                 userNameAttributeName);
+    }
+
+    private String stringValue(Object value) {
+        return value instanceof String string ? string : null;
     }
 
     private void saveOrUpdateUser(String loginId, String name, String email, String provider) {
@@ -78,12 +89,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     newUser.setName(name != null ? name : "소셜회원");
                     newUser.setEmail(email);
                     newUser.setProvider(provider);
-                    newUser.setPassword("OAUTH_USER_TEMP_PASSWORD");
-                    
-                    // 👉 절대 겹치지 않는 임시 전화번호 생성 (loginId 해시값 활용)
-                    int hash = Math.abs(loginId.hashCode() % 100000000);
-                    String uniqueTempPhone = String.format("010-%04d-%04d", hash / 10000, hash % 10000);
-                    newUser.setPhone(uniqueTempPhone);
                     
                     return newUser;
                 });

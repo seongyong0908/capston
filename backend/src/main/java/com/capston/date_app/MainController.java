@@ -12,6 +12,16 @@ public class MainController {
         return "login";
     }
 
+    @GetMapping("/login")
+    public String showLoginPageAtLoginPath() {
+        return "login";
+    }
+
+    @GetMapping("/oauth2/complete")
+    public String showOAuth2CompletePage() {
+        return "oauth2-complete";
+    }
+
     @GetMapping("/signup")
     public String showSignupPage() {
         return "signup";

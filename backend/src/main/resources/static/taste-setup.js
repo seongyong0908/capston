@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let favoriteMoods = [];
   let dislikedActivities = [];
   let dietaryRestrictions = [];
+  let preferencesLoaded = false;
 
   const buttons = document.querySelectorAll('.taste-btn');
   const customDietInput = document.getElementById('customDiet');
@@ -14,7 +15,39 @@ document.addEventListener('DOMContentLoaded', function() {
       || dislikedActivities.length > 0
       || dietaryRestrictions.length > 0
       || Boolean(customDietInput && customDietInput.value.trim());
-    completeBtn.disabled = !hasSelection;
+    completeBtn.disabled = !preferencesLoaded || !hasSelection;
+  };
+
+  const parseSelections = value => value
+    ? value.split(',').map(item => item.trim()).filter(Boolean)
+    : [];
+
+  const loadSavedPreferences = async () => {
+    const loginId = localStorage.getItem('loginId');
+    if (!loginId) {
+      alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      window.location.href = '/';
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/user?login_id=${encodeURIComponent(loginId)}`);
+      if (!response.ok) {
+        throw new Error(`취향 조회에 실패했습니다. (${response.status})`);
+      }
+
+      const profile = await response.json();
+      favoriteMoods = parseSelections(profile.likeVibe);
+      dislikedActivities = parseSelections(profile.hateAct);
+      dietaryRestrictions = parseSelections(profile.foodLimit);
+      if (customDietInput) customDietInput.value = profile.foodMemo || '';
+      preferencesLoaded = true;
+      updateAllUI();
+      updateCompleteButton();
+    } catch (error) {
+      console.error('저장된 취향을 불러오지 못했습니다:', error);
+      alert('저장된 취향을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+    }
   };
 
   // UI 업데이트 및 버튼 클릭 로직
@@ -45,6 +78,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
+      if (!preferencesLoaded) return;
+
       const type = btn.getAttribute('data-type');
       const id = btn.getAttribute('data-id');
 
@@ -67,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
   customDietInput?.addEventListener('input', updateCompleteButton);
 
   clearAllBtn?.addEventListener('click', () => {
+    if (!preferencesLoaded) return;
+
     favoriteMoods = [];
     dislikedActivities = [];
     dietaryRestrictions = [];
@@ -110,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (response.ok) {
         alert("취향 설정이 완료되었습니다!");
         localStorage.setItem('userTaste', 'done');
-        window.location.href = "/mypage";
+        window.location.href = "/home";
       } else {
         alert("서버 오류로 취향 저장에 실패했습니다.");
         updateCompleteButton();
@@ -124,4 +161,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
   updateAllUI();
   updateCompleteButton();
+  loadSavedPreferences();
 });

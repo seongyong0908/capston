@@ -2,33 +2,47 @@ package com.capston.date_app;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.bind.annotation.*;
 
-
-import java.util.Collections;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 public class UserController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final int RESET_TOKEN_VALID_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final PreferenceRepository preferenceRepository;
-    private final JavaMailSender javaMailSender; // 💡 메일 전송을 위한 JavaMailSender 주입
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final PasswordEncoder passwordEncoder;
 
     public record UserProfileResponse(
-            String loginId,
             String name,
             String email,
             String phone,
@@ -38,14 +52,19 @@ public class UserController {
             String foodMemo) {
     }
 
+    public record LoginSessionResponse(String loginId, boolean needsTasteSetup) {
+    }
+
     @PostMapping("/signup")
     public String signup(@RequestBody Map<String, String> data) {
-        System.out.println("🔥 회원가입 데이터 도착: " + data);
-
         User newUser = new User();
         newUser.setName(data.get("name"));
         newUser.setLoginId(data.get("login_id"));
-        newUser.setPassword(data.get("password"));
+        String password = data.get("password");
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+        }
+        newUser.setPassword(passwordEncoder.encode(password));
         newUser.setPhone(data.get("phone"));
         newUser.setEmail(data.get("email"));
 
@@ -61,8 +80,6 @@ public class UserController {
     @ResponseBody
     public String tasteSetup(@RequestBody Map<String, String> data) {
         String loginId = data.get("login_id");
-        System.out.println("🔥 취향 설정 데이터 도착. 대상 아이디: " + loginId);
-
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
@@ -87,12 +104,10 @@ public class UserController {
         String loginId = data.get("login_id");
         String password = data.get("password");
 
-        System.out.println("🔥 로그인 시도 아이디: " + loginId);
-
         User user = userRepository.findByLoginId(loginId).orElse(null);
 
-        // 💡 소셜 가입 유저는 password가 null이므로 NullPointerException 발생 방지를 위해 조건 유지
-        if (user == null || user.getPassword() == null || !user.getPassword().equals(password)) {
+        if (user == null || user.getPassword() == null || password == null
+                || !passwordMatchesAndUpgrade(user, password)) {
             return ResponseEntity.status(401).body("아이디 또는 비밀번호가 틀렸습니다.");
         }
 
@@ -111,117 +126,115 @@ public class UserController {
         HttpSession session = request.getSession(true);
         session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 
-        System.out.println("🔥 로그인 성공 및 세션 등록 완료: " + user.getLoginId());
-
         return ResponseEntity.ok("success");
     }
 
-    // 💡 비밀번호 찾기 (이메일로 재설정 링크 전송) API
     @PostMapping("/api/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> data) {
         String email = data.get("email");
-        System.out.println("🔥 비밀번호 재설정 요청 이메일: " + email);
-
-        // 1. DB에서 해당 이메일을 가진 유저가 있는지 확인
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(404).body("가입되지 않은 이메일입니다.");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body("이메일을 입력해주세요.");
         }
 
-        // 2. 재설정 링크 생성 (로컬 테스트용 주소)
-        String resetLink = "http://localhost:8080/reset-password?email=" + email;
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            return ResponseEntity.internalServerError().body("메일 발송 설정이 없어 비밀번호 재설정을 사용할 수 없습니다.");
+        }
 
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.ok("등록된 이메일이라면 재설정 안내를 발송했습니다.");
+        }
+
+        String tokenValue = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(
+                tokenValue, user, LocalDateTime.now().plusMinutes(RESET_TOKEN_VALID_MINUTES));
+        passwordResetTokenRepository.deleteAllByUser(user);
+        passwordResetTokenRepository.save(resetToken);
+
+        String resetLink = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/reset-password")
+                .queryParam("token", tokenValue)
+                .build()
+                .toUriString();
         try {
-            // 3. 메일 내용 작성 및 전송
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email); // 받는 사람 이메일
-            message.setSubject("[데이트코스 추천] 비밀번호 재설정 안내 메일입니다."); // 메일 제목
-            message.setText("안녕하세요, " + user.getName() + "님!\n\n" +
-                    "요청하신 비밀번호 재설정 링크입니다. 아래 링크를 눌러 비밀번호를 변경해 주세요.\n\n" +
-                    resetLink + "\n\n감사합니다."); // 메일 본문
-
-            javaMailSender.send(message);
-            System.out.println("🔥 비밀번호 재설정 메일 발송 성공!");
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            MimeMessageHelper message = new MimeMessageHelper(
+                    mailSender.createMimeMessage(), StandardCharsets.UTF_8.name());
+            message.setTo(email);
+            message.setSubject("[데이트코스 추천] 비밀번호 재설정 안내 메일입니다.");
+            String plainText = "안녕하세요, " + user.getName() + "님!\n\n" +
+                    "아래 주소를 열어 비밀번호를 변경해 주세요.\n\n" +
+                    resetLink + "\n\n이 링크는 " + RESET_TOKEN_VALID_MINUTES + "분 후 만료됩니다.\n\n감사합니다.";
+            String htmlText = "<p>안녕하세요, " + HtmlUtils.htmlEscape(user.getName()) + "님!</p>" +
+                    "<p>아래 버튼을 눌러 비밀번호를 변경해 주세요.</p>" +
+                    "<p><a href=\"" + HtmlUtils.htmlEscape(resetLink) + "\">비밀번호 재설정하기</a></p>" +
+                    "<p>이 링크는 " + RESET_TOKEN_VALID_MINUTES + "분 후 만료됩니다.</p>";
+            message.setText(plainText, htmlText);
+            mailSender.send(message.getMimeMessage());
+        } catch (MailException | MessagingException e) {
+            passwordResetTokenRepository.delete(resetToken);
+            logger.error("Password reset email could not be sent", e);
             return ResponseEntity.status(500).body("메일 전송 중 오류가 발생했습니다.");
         }
 
-        return ResponseEntity.ok("success");
+        return ResponseEntity.ok("등록된 이메일이라면 재설정 안내를 발송했습니다.");
     }
 
     @GetMapping("/api/user")
-    public UserProfileResponse getUserInfo(@RequestParam("login_id") String loginId) {
-        System.out.println("🔥 마이페이지 정보 요청 들어온 아이디: " + loginId);
+    public ResponseEntity<?> getUserInfo(
+            Authentication authentication,
+            @RequestParam(value = "login_id", required = false) String paramLoginId) {
+
+        String loginId;
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
+                loginId = (String) oauth2User.getAttributes().get("loginId");
+            } else {
+                loginId = authentication.getName();
+            }
+        } else {
+            loginId = paramLoginId;
+        }
+
+        if (loginId == null || loginId.isEmpty()) {
+            return ResponseEntity.status(401).body("로그인 정보가 유효하지 않습니다.");
+        }
+
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
         Preference preference = preferenceRepository.findByUser(user);
 
-        return new UserProfileResponse(
-                user.getLoginId(),
+        return ResponseEntity.ok(new UserProfileResponse(
                 user.getName(),
                 user.getEmail(),
                 user.getPhone(),
                 preference == null ? null : preference.getLikeVibe(),
                 preference == null ? null : preference.getHateAct(),
                 preference == null ? null : preference.getFoodLimit(),
-                preference == null ? null : preference.getFoodMemo());
-        }
-    public static class UserProfileDto {
-        public String loginId;
-        public String name;
-
-        public UserProfileDto(User user) {
-            this.loginId = user.getLoginId();
-            this.name = user.getName();
-        }
+                preference == null ? null : preference.getFoodMemo()));
     }
 
-    // 💡 마이페이지 유저 정보 조회 (보안 세션 우선 조회 방식)
-    @GetMapping("/api/user")
-    public ResponseEntity<?> getUserInfo(
-            Authentication authentication,
-            @RequestParam(value = "login_id", required = false) String paramLoginId) {
-
-        String loginId = null;
-
-        // 1. Spring Security 인증 객체(Authentication)에서 로그인한 유저 ID 추출
-        if (authentication != null && authentication.isAuthenticated()
-                && !"anonymousUser".equals(authentication.getPrincipal())) {
-
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                // 카카오 / 구글 소셜 로그인
-                OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-                Map<String, Object> attributes = oAuth2User.getAttributes();
-
-                if (attributes.containsKey("loginId")) {
-                    loginId = (String) attributes.get("loginId");
-                } else {
-                    loginId = "KAKAO_" + oAuth2User.getName();
-                }
-            } else {
-                // 일반 로그인 (Spring Security)
-                loginId = authentication.getName();
-            }
+    @GetMapping("/api/session")
+    public ResponseEntity<?> getLoginSession(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
         }
 
-        // 2. 인증 객체 세션이 없는 경우, 전달된 파라미터 login_id 사용 (Fallback)
-        if (loginId == null || loginId.isEmpty()) {
-            loginId = paramLoginId;
+        Object loginIdValue = oauth2User.getAttributes().get("loginId");
+        if (!(loginIdValue instanceof String loginId) || loginId.isBlank()) {
+            return ResponseEntity.status(401).body("로그인 정보를 확인할 수 없습니다.");
         }
-
-        // 3. 최종적으로도 loginId가 없으면 401 에러
-        if (loginId == null || loginId.isEmpty()) {
-            return ResponseEntity.status(401).body("로그인 정보가 유효하지 않습니다.");
-        }
-
-        System.out.println("🔥 마이페이지 정보 요청 들어온 아이디: " + loginId);
 
         User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalStateException("소셜 로그인 사용자 정보를 찾을 수 없습니다."));
+        Preference preference = preferenceRepository.findByUser(user);
+        boolean needsTasteSetup = preference == null
+                || preference.getLikeVibe() == null
+                || preference.getLikeVibe().isBlank();
 
-        return ResponseEntity.ok(new UserProfileDto(user));
+        return ResponseEntity.ok(new LoginSessionResponse(loginId, needsTasteSetup));
     }
 
     // 💡 프로필 수정 API
@@ -231,24 +244,21 @@ public class UserController {
             @RequestParam(value = "login_id", required = false) String paramLoginId,
             @RequestBody Map<String, String> data) {
 
-        String loginId = null;
-
+        String loginId;
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal())) {
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-                Map<String, Object> attributes = oAuth2User.getAttributes();
-                loginId = attributes.containsKey("loginId") ? (String) attributes.get("loginId") : "KAKAO_" + oAuth2User.getName();
+            if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
+                loginId = (String) oauth2User.getAttributes().get("loginId");
             } else {
                 loginId = authentication.getName();
             }
-        }
-
-        if (loginId == null || loginId.isEmpty()) {
+        } else {
             loginId = paramLoginId;
         }
 
-        System.out.println("🔥 프로필 수정 요청 들어온 아이디: " + loginId);
+        if (loginId == null || loginId.isEmpty()) {
+            return "로그인 정보가 유효하지 않습니다.";
+        }
 
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
@@ -261,30 +271,46 @@ public class UserController {
         return "success";
     }
 
-    // 💡 새 비밀번호 재설정(변경) API
     @PostMapping("/api/reset-password")
+    @Transactional
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> data) {
-        String email = data.get("email");
+        String tokenValue = data.get("token");
         String newPassword = data.get("newPassword");
 
-        System.out.println("🔥 비밀번호 재설정 요청 이메일: " + email);
-
-        if (email == null || newPassword == null) {
+        if (tokenValue == null || tokenValue.isBlank() || newPassword == null || newPassword.length() < 8) {
             return ResponseEntity.badRequest().body("잘못된 요청입니다.");
         }
 
-        // 1. 해당 이메일을 가진 유저 조회
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(404).body("존재하지 않는 회원입니다.");
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(tokenValue).orElse(null);
+        if (resetToken == null || resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (resetToken != null) {
+                passwordResetTokenRepository.delete(resetToken);
+            }
+            return ResponseEntity.badRequest().body("재설정 링크가 만료되었거나 유효하지 않습니다.");
         }
 
-        // 2. 새 비밀번호로 업데이트
-        user.setPassword(newPassword);
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        System.out.println("🔥 비밀번호 재설정 완료!");
+        passwordResetTokenRepository.deleteAllByUser(user);
         return ResponseEntity.ok("success");
     }
 
+    private boolean passwordMatchesAndUpgrade(User user, String rawPassword) {
+        String storedPassword = user.getPassword();
+        if (isBcryptHash(storedPassword)) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+        if (!storedPassword.equals(rawPassword)) {
+            return false;
+        }
+
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        userRepository.save(user);
+        return true;
+    }
+
+    private boolean isBcryptHash(String password) {
+        return password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$");
+    }
 }

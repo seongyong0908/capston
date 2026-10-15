@@ -2,10 +2,11 @@
 CREATE TABLE IF NOT EXISTS user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     login_id VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NULL,
     name VARCHAR(50) NOT NULL,
-    phone VARCHAR(20) NOT NULL UNIQUE,
-    email VARCHAR(100)
+    phone VARCHAR(20) NULL UNIQUE,
+    email VARCHAR(100),
+    provider VARCHAR(255)
 );
 
 -- 2. 사용자 취향 테이블
@@ -38,19 +39,7 @@ CREATE TABLE IF NOT EXISTS room_member (
     CONSTRAINT fk_room_member_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 );
 
--- 5. AI 코스 요청 내역 테이블
-CREATE TABLE IF NOT EXISTS ai_request (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    room_id BIGINT NOT NULL,
-    target_region VARCHAR(100),
-    target_budget INT,
-    transportation VARCHAR(100), 
-    duration VARCHAR(100),
-    CONSTRAINT fk_ai_request_room FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE
-);
-
-
--- 6. 사용자가 선택해 보관하거나 일정에 추가한 코스
+-- 5. 사용자가 선택해 보관하거나 일정에 추가한 코스
 CREATE TABLE IF NOT EXISTS course (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -67,7 +56,7 @@ CREATE TABLE IF NOT EXISTS course (
         FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE SET NULL
 );
 
--- 7. 전체 추천 장소 목록 (코스별 연결 정보는 course_place에서 관리)
+-- 6. 전체 추천 장소 목록 (코스별 연결 정보는 course_place에서 관리)
 CREATE TABLE IF NOT EXISTS place (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     place_name VARCHAR(255) NOT NULL,
@@ -84,7 +73,7 @@ CREATE TABLE IF NOT EXISTS place (
     rating DECIMAL(3, 2)
 );
 
--- 8. 코스에 포함된 장소와 방문 순서
+-- 7. 코스에 포함된 장소와 방문 순서
 CREATE TABLE IF NOT EXISTS course_place (
     course_id BIGINT NOT NULL,
     place_id BIGINT NOT NULL,
@@ -98,7 +87,7 @@ CREATE TABLE IF NOT EXISTS course_place (
         FOREIGN KEY (place_id) REFERENCES place(id)
 );
 
--- 9. 캘린더에 등록된 코스 일정
+-- 8. 캘린더에 등록된 코스 일정
 CREATE TABLE IF NOT EXISTS calendar_event (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     course_id BIGINT NOT NULL UNIQUE,
