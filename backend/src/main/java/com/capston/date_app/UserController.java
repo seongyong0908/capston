@@ -159,7 +159,7 @@ public class UserController {
                 .toUriString();
         try {
             MimeMessageHelper message = new MimeMessageHelper(
-                    mailSender.createMimeMessage(), StandardCharsets.UTF_8.name());
+                    mailSender.createMimeMessage(), true, StandardCharsets.UTF_8.name());
             message.setTo(email);
             message.setSubject("[데이트코스 추천] 비밀번호 재설정 안내 메일입니다.");
             String plainText = "안녕하세요, " + user.getName() + "님!\n\n" +
