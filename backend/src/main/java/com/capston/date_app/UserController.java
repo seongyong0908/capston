@@ -126,7 +126,7 @@ public class UserController {
         HttpSession session = request.getSession(true);
         session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 
-        return ResponseEntity.ok("success");
+        return ResponseEntity.ok(new LoginSessionResponse(loginId, needsTasteSetup(user)));
     }
 
     @PostMapping("/api/forgot-password")
@@ -229,12 +229,14 @@ public class UserController {
 
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalStateException("소셜 로그인 사용자 정보를 찾을 수 없습니다."));
+        return ResponseEntity.ok(new LoginSessionResponse(loginId, needsTasteSetup(user)));
+    }
+
+    private boolean needsTasteSetup(User user) {
         Preference preference = preferenceRepository.findByUser(user);
-        boolean needsTasteSetup = preference == null
+        return preference == null
                 || preference.getLikeVibe() == null
                 || preference.getLikeVibe().isBlank();
-
-        return ResponseEntity.ok(new LoginSessionResponse(loginId, needsTasteSetup));
     }
 
     // 💡 프로필 수정 API

@@ -126,6 +126,7 @@
       </div>
     </div>
   </div>
+  <script src="/login.js"></script>
    <script>
     document.addEventListener("DOMContentLoaded", function() {
       // 1. 회원가입 완료 알림 처리
@@ -135,42 +136,7 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // 2. 일반 로그인 (폼 제출 처리)
-      const loginForm = document.getElementById('loginForm');
-      if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-          e.preventDefault(); // 기본 폼 이동 방지
-
-          const usernameInput = document.getElementById('username').value.trim();
-          const passwordInput = document.getElementById('password').value.trim();
-
-          // 백엔드가 원하는 키 이름인 login_id, password에 맞춰 JSON 생성
-          fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              login_id: usernameInput,
-              password: passwordInput
-            })
-          })
-          .then(async response => {
-            if (response.ok) {        
-              window.location.href = '/home'; // 로그인 성공 후 이동할 메인 경로
-            } else {
-              const text = await response.text();
-              alert(text || "아이디 또는 비밀번호가 틀렸습니다.");
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert("로그인 처리 중 서버 통신 오류가 발생했습니다.");
-          });
-        });
-      }
-
-      // 3. 소셜 로그인 링크 이벤트
+      // 2. 소셜 로그인 링크 이벤트
       const kakaoBtn = document.querySelector('a[href="/oauth2/authorization/kakao"]');
       if (kakaoBtn) {
         kakaoBtn.addEventListener('click', function(e) {
